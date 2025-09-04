@@ -6,16 +6,14 @@ import {
   type UpdateEvent,
 } from "~/core/features/events/types";
 import type { UndefinedToNullable } from "~/lib/types";
-import { injectable } from "tsyringe";
+import { singleton } from "tsyringe";
 import type { SchemaConnection } from "~/adapters/db";
 import { db } from "~/adapters/db";
 import { events } from "~/adapters/db/schema";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { NotFoundError } from "~/core/common/error";
 
-export const EventQueriesSymbol = Symbol("EventQueries");
-
-@injectable({ token: EventQueriesSymbol })
+@singleton()
 export class EventQueries {
   private rowToEvent(event: UndefinedToNullable<Event>): Event {
     return {

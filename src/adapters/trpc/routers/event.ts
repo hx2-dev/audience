@@ -9,10 +9,7 @@ import {
   createEventValidator,
   updateEventValidator,
 } from "~/core/features/events/types";
-import {
-  type EventService,
-  EventServiceSymbol,
-} from "~/core/features/events/service";
+import { EventService } from "~/core/features/events/service";
 import { container } from "tsyringe";
 import { toTrpcError } from "~/core/common/error";
 import type { Event } from "~/core/features/events/types";
@@ -21,7 +18,7 @@ import type { TaskEither } from "fp-ts/lib/TaskEither";
 const serviceCall = async <T>(
   fn: (service: EventService) => TaskEither<Error, T>,
 ) => {
-  const service = container.resolve<EventService>(EventServiceSymbol);
+  const service = container.resolve<EventService>(EventService);
   const result = await fn(service)();
 
   return E.match(

@@ -1,18 +1,16 @@
-import { injectable, inject } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { Event, CreateEvent, UpdateEvent } from "./types";
-import { type EventQueries, EventQueriesSymbol } from "./queries";
+import { EventQueries } from "./queries";
 import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
 
-export const EventServiceSymbol = Symbol("EventService");
-
-@injectable({ token: EventServiceSymbol })
+@singleton()
 export class EventService {
   constructor(
-    @inject(EventQueriesSymbol)
+    @inject(EventQueries)
     private readonly eventQueries: EventQueries,
   ) {}
 
