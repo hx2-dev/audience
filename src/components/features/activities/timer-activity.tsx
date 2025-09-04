@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import type { z } from "zod";
 import type { timerActivityValidator } from "~/core/features/presenter/types";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Progress } from "~/components/ui/progress";
 
 interface TimerActivityProps {
   data: z.infer<typeof timerActivityValidator>;
@@ -36,8 +35,16 @@ export function TimerActivity({ data }: TimerActivityProps) {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const progress = Math.max(0, (timeLeft / data.durationMs) * 100);
+  const progressPercent = Math.max(0, (timeLeft / data.durationMs) * 100);
   const isComplete = timeLeft === 0;
+  
+  // Circle properties - responsive sizing
+  const size = 240; // Smaller base size for mobile
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = -((100 - progressPercent) / 100 * circumference);
 
   return (
     <Card
@@ -48,23 +55,45 @@ export function TimerActivity({ data }: TimerActivityProps) {
           {data.title ?? "Timer"}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 sm:space-y-6">
-        <div className="text-center">
-          <div
-            className={`font-mono text-4xl font-bold sm:text-5xl lg:text-6xl ${isComplete ? "text-red-600" : "text-blue-600"}`}
+      <CardContent className="flex flex-col items-center space-y-6">
+        <div className="relative w-full max-w-xs sm:max-w-sm lg:max-w-md aspect-square">
+          <svg
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${size} ${size}`}
+            className="transform -rotate-90"
           >
-            {formatTime(timeLeft)}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Progress
-            value={progress}
-            className={`h-3 sm:h-4 ${isComplete ? "[&>div]:bg-red-500" : "[&>div]:bg-blue-500"}`}
-          />
-          <div className="flex justify-between text-xs text-gray-600 sm:text-sm dark:text-gray-300">
-            <span>00:00</span>
-            <span>{formatTime(data.durationMs)}</span>
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              stroke="currentColor"
+              strokeWidth={strokeWidth}
+              fill="none"
+              className="text-gray-200 dark:text-gray-700"
+            />
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              stroke="currentColor"
+              strokeWidth={strokeWidth}
+              fill="none"
+              strokeDasharray={strokeDasharray}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              className={`transition-all duration-1000 ${isComplete ? "text-red-500" : "text-blue-500"}`}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div
+              className={`font-mono text-3xl font-bold sm:text-4xl lg:text-5xl ${isComplete ? "text-red-600" : "text-blue-600"}`}
+            >
+              {formatTime(timeLeft)}
+            </div>
+            <div className="text-sm text-gray-500 mt-1 sm:text-base dark:text-gray-400">
+              / {formatTime(data.durationMs)}
+            </div>
           </div>
         </div>
 
