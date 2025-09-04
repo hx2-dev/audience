@@ -19,6 +19,7 @@ export const multipleChoiceQuestionValidator = z.object({
   question: z.string().min(1),
   options: z.array(z.string().min(1)).min(2),
   allowMultiple: z.boolean().default(false),
+  activityId: z.number().int().min(1).optional(),
 });
 
 export const freeResponseQuestionValidator = z.object({
@@ -26,12 +27,14 @@ export const freeResponseQuestionValidator = z.object({
   question: z.string().min(1),
   placeholder: z.string().optional(),
   maxLength: z.number().int().positive().optional(),
+  activityId: z.number().int().min(1).optional(),
 });
 
 export const rankingQuestionValidator = z.object({
   type: z.literal("ranking"),
   question: z.string().min(1),
   items: z.array(z.string().min(1)).min(2),
+  activityId: z.number().int().min(1).optional(),
 });
 
 export const breakActivityValidator = z.object({
@@ -52,6 +55,12 @@ export const iframeActivityValidator = z.object({
   description: z.string().optional(),
 });
 
+export const resultsActivityValidator = z.object({
+  type: z.literal("results"),
+  activityId: z.number().int().min(1),
+  title: z.string().optional(),
+});
+
 // Union of all activity types
 export const activityDataValidator = z.discriminatedUnion("type", [
   welcomeActivityValidator,
@@ -62,6 +71,7 @@ export const activityDataValidator = z.discriminatedUnion("type", [
   breakActivityValidator,
   thankYouActivityValidator,
   iframeActivityValidator,
+  resultsActivityValidator,
 ]);
 
 export type ActivityData = z.infer<typeof activityDataValidator>;

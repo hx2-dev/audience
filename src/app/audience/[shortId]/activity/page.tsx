@@ -3,6 +3,7 @@ import "reflect-metadata";
 
 import { redirect } from "next/navigation";
 import { auth } from "~/core/generic/auth";
+import { AudienceActivityPageClient } from "./audience-activity-client";
 import { container } from "tsyringe";
 import { EventService } from "~/core/features/events/service";
 import * as E from "fp-ts/lib/Either";
@@ -29,15 +30,15 @@ export async function generateMetadata({
 
     const event = eventResult.right;
     return {
-      title: `${event.title} - Audience`,
-      description: event.description ?? `Join the audience for ${event.title}`,
+      title: `${event.title} - Activity`,
+      description: event.description ?? `Join the activity for ${event.title}`,
     };
   } catch {
     return { title: `Event ${shortId.toUpperCase()}` };
   }
 }
 
-export default async function AudiencePage({
+export default async function AudienceActivityPage({
   params,
 }: {
   params: Promise<{ shortId: string }>;
@@ -83,6 +84,13 @@ export default async function AudiencePage({
     );
   }
 
-  // Redirect to the activity page by default
-  redirect(`/audience/${shortId}/activity`);
+  const event = eventResult.right;
+
+  return (
+    <AudienceActivityPageClient
+      shortId={shortId}
+      session={session}
+      initialEvent={event}
+    />
+  );
 }

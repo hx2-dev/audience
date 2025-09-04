@@ -8,23 +8,22 @@ interface ThankYouActivityProps {
 
 export function ThankYouActivity({ data }: ThankYouActivityProps) {
   return (
-    <div className="py-4 sm:py-8">
-      <Card className="border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-400">
-        <CardContent className="pt-4 sm:pt-6 text-center space-y-4 sm:space-y-6">
-          <div className="text-green-600 dark:text-green-400">
-            <div className="text-4xl mb-2">🎉</div>
-            <h2 className="text-2xl sm:text-3xl font-bold">Thank You!</h2>
-          </div>
-          
-          <div className="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto break-words px-4">
-            {data.message ?? "Thank you for your participation! Have a great day."}
-          </div>
+    <Card className="border-green-500 bg-green-50 dark:border-green-400 dark:bg-green-900/20">
+      <CardContent className="space-y-4 pt-4 text-center sm:space-y-6 sm:pt-6">
+        <div className="text-green-600 dark:text-green-400">
+          <div className="mb-2 text-4xl">🎉</div>
+          <h2 className="text-2xl font-bold sm:text-3xl">Thank You!</h2>
+        </div>
 
-          <div className="text-green-600 dark:text-green-400 text-4xl sm:text-5xl">
-            ✨
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <div className="mx-auto max-w-2xl px-4 text-lg break-words text-gray-700 dark:text-gray-300">
+          {data.message ??
+            "Thank you for your participation! Have a great day."}
+        </div>
+
+        <div className="text-4xl text-green-600 sm:text-5xl dark:text-green-400">
+          ✨
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -43,6 +43,11 @@ export function ActivityManager({
   const [mcQuestion, setMcQuestion] = useState("");
   const [mcOptions, setMcOptions] = useState(["", ""]);
   const [allowMultiple, setAllowMultiple] = useState(false);
+  const [frQuestion, setFrQuestion] = useState("");
+  const [frPlaceholder, setFrPlaceholder] = useState("");
+  const [frMaxLength, setFrMaxLength] = useState<number | undefined>(undefined);
+  const [rankingQuestion, setRankingQuestion] = useState("");
+  const [rankingItems, setRankingItems] = useState(["", ""]);
 
   const resetForm = () => {
     setNewActivityName("");
@@ -54,6 +59,11 @@ export function ActivityManager({
     setMcQuestion("");
     setMcOptions(["", ""]);
     setAllowMultiple(false);
+    setFrQuestion("");
+    setFrPlaceholder("");
+    setFrMaxLength(undefined);
+    setRankingQuestion("");
+    setRankingItems(["", ""]);
   };
 
   const handleCreateActivity = async () => {
@@ -87,6 +97,24 @@ export function ActivityManager({
           allowMultiple,
         };
         break;
+      case "free-response":
+        if (!frQuestion.trim()) return;
+        activityData = {
+          type: "free-response",
+          question: frQuestion,
+          placeholder: frPlaceholder.trim() || undefined,
+          maxLength: frMaxLength,
+        };
+        break;
+      case "ranking":
+        const validItems = rankingItems.filter(item => item.trim());
+        if (validItems.length < 2 || !rankingQuestion.trim()) return;
+        activityData = {
+          type: "ranking",
+          question: rankingQuestion,
+          items: validItems,
+        };
+        break;
       default:
         return;
     }
@@ -117,6 +145,22 @@ export function ActivityManager({
   const removeMcOption = (index: number) => {
     if (mcOptions.length > 2) {
       setMcOptions(mcOptions.filter((_, i) => i !== index));
+    }
+  };
+
+  const addRankingItem = () => {
+    setRankingItems([...rankingItems, ""]);
+  };
+
+  const updateRankingItem = (index: number, value: string) => {
+    const newItems = [...rankingItems];
+    newItems[index] = value;
+    setRankingItems(newItems);
+  };
+
+  const removeRankingItem = (index: number) => {
+    if (rankingItems.length > 2) {
+      setRankingItems(rankingItems.filter((_, i) => i !== index));
     }
   };
 
@@ -266,6 +310,90 @@ export function ActivityManager({
                 </div>
               )}
 
+              {newActivityType === "free-response" && (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="fr-question">Question</Label>
+                    <Textarea
+                      id="fr-question"
+                      placeholder="What do you think about this topic?"
+                      value={frQuestion}
+                      onChange={(e) => setFrQuestion(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="fr-placeholder">Placeholder (optional)</Label>
+                    <Input
+                      id="fr-placeholder"
+                      placeholder="Enter your thoughts here..."
+                      value={frPlaceholder}
+                      onChange={(e) => setFrPlaceholder(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="fr-max-length">Maximum Length (optional)</Label>
+                    <Input
+                      id="fr-max-length"
+                      type="number"
+                      min={1}
+                      max={5000}
+                      placeholder="500"
+                      value={frMaxLength?.toString() ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFrMaxLength(value ? Number(value) : undefined);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {newActivityType === "ranking" && (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="ranking-question">Question</Label>
+                    <Textarea
+                      id="ranking-question"
+                      placeholder="Rank these items in order of preference:"
+                      value={rankingQuestion}
+                      onChange={(e) => setRankingQuestion(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label>Items to Rank</Label>
+                    <div className="space-y-2 mt-2">
+                      {rankingItems.map((item, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <Input
+                            placeholder={`Item ${index + 1}`}
+                            value={item}
+                            onChange={(e) => updateRankingItem(index, e.target.value)}
+                          />
+                          {rankingItems.length > 2 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeRankingItem(index)}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={addRankingItem}
+                      className="mt-2"
+                    >
+                      Add Item
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsCreating(false)}>
                   Cancel
@@ -313,6 +441,16 @@ export function ActivityManager({
                         {activity.data.type === "timer" && (
                           <Badge variant="outline">
                             {Math.floor(activity.data.durationMs / 1000)}s
+                          </Badge>
+                        )}
+                        {activity.data.type === "free-response" && activity.data.maxLength && (
+                          <Badge variant="outline">
+                            Max {activity.data.maxLength} chars
+                          </Badge>
+                        )}
+                        {activity.data.type === "ranking" && (
+                          <Badge variant="outline">
+                            {activity.data.items.length} items
                           </Badge>
                         )}
                       </div>

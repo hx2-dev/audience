@@ -3,6 +3,7 @@ import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { ActivityResponseQueries } from "~/core/features/responses/queries";
 import { ActivityService } from "~/core/features/activities/service";
+import { EventService } from "~/core/features/events/service";
 import type {
   ActivityResponse,
   CreateActivityResponse,
@@ -17,13 +18,18 @@ export class ActivityResponseService {
     private readonly responseQueries: ActivityResponseQueries,
     @inject(ActivityService)
     private readonly activityService: ActivityService,
+    @inject(EventService)
+    private readonly eventService: EventService,
   ) {}
 
   getByActivityId(activityId: number): TaskEither<Error, ActivityResponse[]> {
     return this.responseQueries.getByActivityId({ activityId });
   }
 
-  getUserResponse(userId: string, activityId: number): TaskEither<Error, ActivityResponse | null> {
+  getUserResponse(
+    userId: string,
+    activityId: number,
+  ): TaskEither<Error, ActivityResponse | null> {
     return this.responseQueries.getByUserAndActivity({ userId, activityId });
   }
 
@@ -33,7 +39,22 @@ export class ActivityResponseService {
   ): TaskEither<Error, ActivityResponse> {
     return pipe(
       this.activityService.getById(createResponse.activityId),
-      TE.flatMap(() => this.responseQueries.create({ createResponse, userId })),
+      TE.flatMap((activity) =>
+        pipe(
+          this.responseQueries.create({ createResponse, userId }),
+          TE.flatMap((response) =>
+            pipe(
+              this.eventService.getById(activity.eventId),
+              TE.flatMap((event) =>
+                pipe(
+                  this.broadcastResponseUpdate(event.shortId ?? null),
+                  TE.map(() => response),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -42,5 +63,19 @@ export class ActivityResponseService {
     userId?: string,
   ): TaskEither<Error, ActivityResponse> {
     return this.responseQueries.update({ updateResponse, userId });
+  }
+
+  private broadcastResponseUpdate(shortId: string | null) {
+    if (!shortId) return TE.right(void 0);
+
+    return TE.tryCatch(
+      async () => {
+        const { broadcastToEvent } = await import(
+          "~/app/api/events/[shortId]/stream/route"
+        );
+        broadcastToEvent(shortId, ["activity-responses"]);
+      },
+      (error) => error as Error,
+    );
   }
 }

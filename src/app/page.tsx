@@ -57,7 +57,6 @@ export default async function Home() {
             </div>
           </div>
         </div>
-        <div className="absolute inset-0 h-full w-full bg-[radial-gradient(circle,#78787850_1px,transparent_1px)] bg-[size:20px_20px]" />
       </main>
     </HydrateClient>
   );

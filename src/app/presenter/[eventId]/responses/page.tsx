@@ -1,8 +1,9 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { auth } from "~/core/generic/auth";
+import { PresenterResponsesPageClient } from "./presenter-responses-client";
 
-export default async function PresenterPage({
+export default async function PresenterResponsesPage({
   params,
 }: {
   params: { eventId: string };
@@ -28,6 +29,5 @@ export default async function PresenterPage({
     );
   }
 
-  // Redirect to the control page by default
-  redirect(`/presenter/${eventId}/control`);
+  return <PresenterResponsesPageClient eventId={eventId} session={session} />;
 }

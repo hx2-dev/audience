@@ -1,11 +1,12 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { auth } from "~/core/generic/auth";
+import { PresenterControlPageClient } from "./presenter-control-client";
 
-export default async function PresenterPage({
+export default async function PresenterControlPage({
   params,
 }: {
-  params: { eventId: string };
+  params: Promise<{ eventId: string }>;
 }) {
   const session = await auth();
 
@@ -13,7 +14,7 @@ export default async function PresenterPage({
     redirect("/api/auth/signin");
   }
 
-  const eventId = parseInt(params.eventId);
+  const eventId = parseInt((await params).eventId);
 
   if (!eventId || isNaN(eventId)) {
     return (
@@ -28,6 +29,5 @@ export default async function PresenterPage({
     );
   }
 
-  // Redirect to the control page by default
-  redirect(`/presenter/${eventId}/control`);
+  return <PresenterControlPageClient eventId={eventId} session={session} />;
 }

@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { z } from "zod";
 import type { freeResponseQuestionValidator } from "~/core/features/presenter/types";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
+import { api } from "~/trpc/react";
+import { useActivityData } from "~/components/features/audience/activity-tab";
+import { FreeResponseResults } from "~/components/features/results/free-response-results";
 
 interface FreeResponseActivityProps {
   data: z.infer<typeof freeResponseQuestionValidator>;
@@ -14,83 +17,115 @@ interface FreeResponseActivityProps {
 export function FreeResponseActivity({ data }: FreeResponseActivityProps) {
   const [response, setResponse] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (response.trim()) {
+  const submitResponseMutation = api.responses.submit.useMutation();
+
+  // Get pre-fetched activity data from context
+  const { userResponse, allResponses, refetchData } = useActivityData();
+
+  // Populate existing response when found
+  useEffect(() => {
+    if (userResponse && !submitted) {
+      const responseData = userResponse.response;
+      if (typeof responseData === "string") {
+        setResponse(responseData);
+      }
       setSubmitted(true);
-      // Here you would typically send the response to the server
-      console.log('Free response:', response);
+    }
+  }, [userResponse, submitted]);
+
+  const handleSubmit = async () => {
+    if (response.trim() && data.activityId) {
+      setIsSubmitting(true);
+      try {
+        await submitResponseMutation.mutateAsync({
+          activityId: data.activityId,
+          response: response.trim(),
+        });
+        setSubmitted(true);
+        // Refetch combined data to get the latest response data
+        refetchData();
+      } catch (error) {
+        console.error("Failed to submit response:", error);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  const canSubmit = response.trim().length > 0;
+
+  const canSubmit =
+    response.trim().length > 0 && data.activityId && !isSubmitting;
   const characterCount = response.length;
   const isOverLimit = data.maxLength ? characterCount > data.maxLength : false;
+  const hasUserResponded = submitted || !!userResponse;
+  const showResults = hasUserResponded && allResponses.length > 0;
 
-  if (submitted) {
+  if (showResults) {
     return (
-      <div className="py-8">
-        <Card className="border-green-500 bg-green-50">
-          <CardContent className="pt-6 text-center">
-            <div className="text-green-600 text-lg font-semibold mb-2">
-              ✓ Response Submitted
-            </div>
-            <p className="text-gray-600">
-              Thank you for your response!
-            </p>
-            <div className="mt-4 p-4 bg-white rounded-lg border text-left">
-              <p className="text-sm font-medium text-gray-700 mb-2">Your response:</p>
-              <p className="text-gray-800">{response}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <FreeResponseResults
+        data={{
+          question: data.question,
+          placeholder: data.placeholder,
+          maxLength: data.maxLength,
+        }}
+        allResponses={allResponses}
+        userResponse={response}
+        showSubmissionBanner={submitted}
+      />
     );
   }
 
   return (
-    <div className="py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Free Response Question</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="text-lg font-medium">
-            {data.question}
-          </div>
-          
-          <div className="space-y-2">
-            <Textarea
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-              placeholder={data.placeholder ?? "Enter your response here..."}
-              className="min-h-32 text-base"
-              maxLength={data.maxLength}
-            />
-            
-            <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>
-                {characterCount} character{characterCount !== 1 ? 's' : ''}
-                {data.maxLength && ` of ${data.maxLength}`}
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg sm:text-xl">
+          Free Response Question
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 sm:space-y-6">
+        <div className="text-base font-medium break-words sm:text-lg">
+          {data.question}
+        </div>
+
+        <div className="space-y-2">
+          <Textarea
+            value={response}
+            onChange={(e) => setResponse(e.target.value)}
+            placeholder={data.placeholder ?? "Enter your response here..."}
+            className="min-h-32 text-base"
+            maxLength={data.maxLength}
+          />
+
+          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+            <span>
+              {characterCount} character{characterCount !== 1 ? "s" : ""}
+              {data.maxLength && ` of ${data.maxLength}`}
+            </span>
+            {isOverLimit && (
+              <span className="font-medium text-red-600">
+                Exceeds character limit
               </span>
-              {isOverLimit && (
-                <span className="text-red-600 font-medium">
-                  Exceeds character limit
-                </span>
-              )}
-            </div>
+            )}
           </div>
-          
+        </div>
+
+        {!data.activityId ? (
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+            This activity is not accepting responses yet.
+          </div>
+        ) : (
           <Button
             onClick={handleSubmit}
             disabled={!canSubmit || isOverLimit}
             className="w-full"
             size="lg"
           >
-            Submit Response
+            {isSubmitting ? "Submitting..." : "Submit Response"}
           </Button>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

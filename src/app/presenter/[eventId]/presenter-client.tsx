@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { signOut } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -8,12 +8,13 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Trash2, CheckCircle, Clock, User, LogIn } from "lucide-react";
-import { PresenterControl } from "~/components/features/presenter-control";
-import { ActivityManager } from "~/components/features/activity-manager";
+import { PresenterControlSplit } from "~/components/features/presenter/presenter-control-split";
+import { ActivityManagerSplit } from "~/components/features/presenter/activity-manager-split";
+import { ActivityResponseCard } from "~/components/features/presenter/activity-responses/activity-response-card";
 import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { api } from "~/trpc/react";
 import type { Session } from "next-auth";
-import { useEventSSE } from "~/components/hooks/use-event-sse";
+import { useMultiSSEQuery } from "~/components/hooks/use-sse-query";
 import type { ActivityData } from "~/core/features/presenter/types";
 import type {
   CreateActivity,
@@ -122,6 +123,7 @@ function QuestionCard({ question, onAnswer, onDelete }: QuestionCardProps) {
   );
 }
 
+
 interface PresenterDashboardClientProps {
   eventId: number;
   session: Session;
@@ -138,34 +140,33 @@ export function PresenterDashboardClient({
   );
 
   // Fetch activities for this event
-  const { data: activities = [], refetch: refetchActivities } =
-    api.activities.getByEventId.useQuery(
-      { eventId },
-      { enabled: !isNaN(eventId) },
-    );
-
-  // Fetch questions for this event
-  const { data: questions = [], refetch: refetchQuestions } =
-    api.questions.getByEventIdForPresenter.useQuery(
-      { eventId },
-      { enabled: !isNaN(eventId) },
-    );
-
-  // Stabilize SSE callbacks to prevent unnecessary reconnections
-  const sseCallbacks = useCallback(
-    () => ({
-      onQuestionsRefresh: () => void refetchQuestions(),
-      onActivitiesRefresh: () => void refetchActivities(),
-    }),
-    [refetchQuestions, refetchActivities],
+  const activitiesQuery = api.activities.getByEventId.useQuery(
+    { eventId },
+    { enabled: !isNaN(eventId) },
   );
 
-  // SSE connection for real-time updates
-  const { isConnected } = useEventSSE({
-    shortId: event?.shortId,
-    callbacks: sseCallbacks(),
-    enabled: !!event?.shortId,
-  });
+  // Fetch questions for this event
+  const questionsQuery = api.questions.getByEventIdForPresenter.useQuery(
+    { eventId },
+    { enabled: !isNaN(eventId) },
+  );
+
+  // Enhanced refetch for activity responses that also dispatches events
+  const enhancedActivityResponsesRefresh = () => {
+    // Dispatch event for individual activity components to pick up
+    window.dispatchEvent(new CustomEvent('activity-responses-updated'));
+  };
+
+  // SSE connection with automatic query integration
+  const { isConnected } = useMultiSSEQuery([
+    { queryResult: questionsQuery, eventType: "questions" },
+    { queryResult: activitiesQuery, eventType: "activities" },
+    { queryResult: { refetch: enhancedActivityResponsesRefresh }, eventType: "activity-responses" },
+  ], event?.shortId, !!event?.shortId);
+
+  // Extract data for easier access
+  const activities = activitiesQuery.data ?? [];
+  const questions = questionsQuery.data ?? [];
 
   // Mutations
   const createActivityMutation = api.activities.create.useMutation();
@@ -179,16 +180,49 @@ export function PresenterDashboardClient({
   const [activeTab, setActiveTab] = useState("control");
 
   const handleStateUpdate = async (page: string, data?: ActivityData) => {
+    let updatedData = data;
+
+    // First, create a saved activity if this is an interactive activity
+    if (data && ["multiple-choice", "free-response", "ranking"].includes(data.type)) {
+      const getActivityName = (activityData: ActivityData): string => {
+        if (activityData.type === "multiple-choice") {
+          return `Multiple Choice: ${activityData.question}`;
+        }
+        if (activityData.type === "free-response") {
+          return `Free Response: ${activityData.question}`;
+        }
+        if (activityData.type === "ranking") {
+          return `Ranking: ${activityData.question}`;
+        }
+        return `${activityData.type} Activity`;
+      };
+
+      const activityName = getActivityName(data);
+
+      const createdActivity = await createActivityMutation.mutateAsync({
+        eventId,
+        name: activityName.substring(0, 100), // Truncate if too long
+        type: data.type,
+        data,
+      });
+      
+      // Add the activityId to the data
+      updatedData = { ...data, activityId: createdActivity.id } as ActivityData;
+      
+      await activitiesQuery.refetch();
+    }
+
+    // Then update the presenter state with the updated data (including activityId)
     await updatePresenterStateMutation.mutateAsync({
       eventId,
       currentPage: page,
-      data,
+      data: updatedData,
     });
   };
 
   const handleCreateActivity = async (createActivity: CreateActivity) => {
     await createActivityMutation.mutateAsync(createActivity);
-    await refetchActivities();
+    await activitiesQuery.refetch();
   };
 
   const handleUpdateActivity = async (
@@ -196,37 +230,55 @@ export function PresenterDashboardClient({
     updates: Partial<Activity>,
   ) => {
     await updateActivityMutation.mutateAsync({ id: activityId, ...updates });
-    await refetchActivities();
+    await activitiesQuery.refetch();
   };
 
   const handleDeleteActivity = async (activityId: number) => {
     await deleteActivityMutation.mutateAsync({ id: activityId });
-    await refetchActivities();
+    await activitiesQuery.refetch();
   };
 
   const handleReorderActivities = async (activityIds: number[]) => {
     await reorderActivitiesMutation.mutateAsync({ activityIds });
-    await refetchActivities();
+    await activitiesQuery.refetch();
   };
 
   const handleStartActivity = async (activity: Activity) => {
-    // Update the activity's startedAt if it's a timer
+    // Update the activity's startedAt if it's a timer and add the activityId
     const activityData =
       activity.data.type === "timer"
-        ? { ...activity.data, startedAt: new Date() }
-        : activity.data;
+        ? { ...activity.data, startedAt: new Date(), activityId: activity.id }
+        : { ...activity.data, activityId: activity.id };
 
-    await handleStateUpdate(activity.type, activityData);
+    // For activities started from the activity manager, just update presenter state
+    // Don't create a new activity since it already exists
+    await updatePresenterStateMutation.mutateAsync({
+      eventId,
+      currentPage: activity.type,
+      data: activityData,
+    });
   };
 
   const handleAnswerQuestion = async (questionId: number, answer: string) => {
     await answerQuestionMutation.mutateAsync({ questionId, answer });
-    await refetchQuestions();
+    await questionsQuery.refetch();
   };
 
   const handleDeleteQuestion = async (questionId: number) => {
     await deleteQuestionMutation.mutateAsync({ id: questionId });
-    await refetchQuestions();
+    await questionsQuery.refetch();
+  };
+
+  const handleShowResults = async (activity: Activity) => {
+    await updatePresenterStateMutation.mutateAsync({
+      eventId,
+      currentPage: "results",
+      data: {
+        type: "results",
+        activityId: activity.id,
+        title: `${activity.name} - Results`,
+      },
+    });
   };
 
   if (eventLoading) {
@@ -341,7 +393,7 @@ export function PresenterDashboardClient({
                 <CardTitle>Presentation Control</CardTitle>
               </CardHeader>
               <CardContent>
-                <PresenterControl
+                <PresenterControlSplit
                   eventShortId={event.shortId ?? ""}
                   onStateUpdate={handleStateUpdate}
                 />
@@ -355,7 +407,7 @@ export function PresenterDashboardClient({
                 <CardTitle>Activity Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <ActivityManager
+                <ActivityManagerSplit
                   eventId={eventId}
                   activities={activities}
                   onCreateActivity={handleCreateActivity}
@@ -374,10 +426,22 @@ export function PresenterDashboardClient({
                 <CardTitle>Audience Responses</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-                  Response viewing interface coming soon...
-                  <br />
-                  This will show responses from your audience in real-time.
+                <div className="space-y-6">
+                  {activities.length === 0 ? (
+                    <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+                      No activities created yet.
+                      <br />
+                      Create activities in the &ldquo;Manage Activities&rdquo; tab to see responses here.
+                    </div>
+                  ) : (
+                    activities.map((activity) => (
+                      <ActivityResponseCard 
+                        key={activity.id} 
+                        activity={activity} 
+                        onShowResults={handleShowResults}
+                      />
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { index, pgTableCreator, primaryKey } from "drizzle-orm/pg-core";
+import { index, pgTableCreator, primaryKey, uniqueIndex } from "drizzle-orm/pg-core";
 import { type AdapterAccount } from "next-auth/adapters";
 
 /**
@@ -201,7 +201,7 @@ export const activityResponses = createTable(
       .integer()
       .notNull()
       .references(() => activities.id),
-    userId: d.varchar({ length: 255 }).references(() => users.id),
+    userId: d.varchar({ length: 255 }).notNull().references(() => users.id),
     response: d.jsonb().notNull(),
     createdAt: d
       .timestamp({ withTimezone: true })
@@ -216,6 +216,8 @@ export const activityResponses = createTable(
   (t) => [
     index("activity_response_activity_id_idx").on(t.activityId),
     index("activity_response_user_id_idx").on(t.userId),
+    // Unique constraint: one response per user per activity
+    uniqueIndex("unique_user_activity_response").on(t.userId, t.activityId),
   ],
 );
 

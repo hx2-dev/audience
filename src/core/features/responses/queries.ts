@@ -89,11 +89,18 @@ export class ActivityResponseQueries {
             userId,
             response: JSON.stringify(createResponse.response),
           })
+          .onConflictDoUpdate({
+            target: [activityResponses.userId, activityResponses.activityId],
+            set: {
+              response: JSON.stringify(createResponse.response),
+              updatedAt: new Date(),
+            },
+          })
           .returning()
           .execute();
 
         if (!response) {
-          throw new NotFoundError("Response not created");
+          throw new NotFoundError("Response not created/updated");
         }
         return this.rowToResponse(response);
       },

@@ -7,7 +7,9 @@ import * as E from "fp-ts/lib/Either";
 export interface SSEMessage {
   type: "connected" | "refresh";
   data?: {
-    refreshTypes: Array<"presenter-state" | "questions" | "activities">;
+    refreshTypes: Array<
+      "presenter-state" | "questions" | "activities" | "activity-responses"
+    >;
   };
 }
 
@@ -42,21 +44,23 @@ function removeConnection(
 }
 
 export function broadcastToEvent(
-  shortId: string, 
-  refreshTypes: Array<"presenter-state" | "questions" | "activities"> = ["presenter-state"]
+  shortId: string,
+  refreshTypes: Array<
+    "presenter-state" | "questions" | "activities" | "activity-responses"
+  > = ["presenter-state"],
 ) {
   // Broadcasting to shortId: ${shortId}, types: [${refreshTypes.join(', ')}]
-  
+
   const eventConnections = connections.get(shortId);
   if (eventConnections && eventConnections.size > 0) {
     const sseMessage: SSEMessage = {
       type: "refresh",
-      data: { refreshTypes }
+      data: { refreshTypes },
     };
     const message = `data: ${JSON.stringify(sseMessage)}\n\n`;
     // Sending message to ${eventConnections.size} connections
     const deadConnections: ReadableStreamDefaultController[] = [];
-    
+
     eventConnections.forEach((controller) => {
       try {
         controller.enqueue(new TextEncoder().encode(message));
@@ -65,12 +69,12 @@ export function broadcastToEvent(
         deadConnections.push(controller);
       }
     });
-    
+
     // Clean up dead connections
-    deadConnections.forEach(controller => {
+    deadConnections.forEach((controller) => {
       eventConnections.delete(controller);
     });
-    
+
     if (deadConnections.length > 0) {
       // Cleaned up ${deadConnections.length} dead connections
     }
@@ -104,7 +108,9 @@ export async function GET(
 
         const encoder = new TextEncoder();
         const connectedMessage: SSEMessage = { type: "connected" };
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(connectedMessage)}\n\n`));
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify(connectedMessage)}\n\n`),
+        );
 
         // Send heartbeat every 30 seconds to keep connection alive
         const heartbeat = setInterval(() => {

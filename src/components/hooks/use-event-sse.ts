@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 
+// NOTE: This hook is deprecated for direct use in application code.
+// Use the new hooks from use-sse-query.ts instead:
+// - useSSEQuery, useQuestionsSSE, useActivitiesSSE, etc.
+// This hook is maintained for internal use by the new SSE hooks only.
+
 export interface SSEMessage {
   type: "connected" | "refresh";
   data?: {
-    refreshTypes: Array<"presenter-state" | "questions" | "activities">;
+    refreshTypes: Array<"presenter-state" | "questions" | "activities" | "activity-responses">;
   };
 }
 
@@ -11,6 +16,7 @@ export interface SSECallbacks {
   onPresenterStateRefresh?: () => void;
   onQuestionsRefresh?: () => void;
   onActivitiesRefresh?: () => void;
+  onActivityResponsesRefresh?: () => void;
 }
 
 export interface UseEventSSEOptions {
@@ -81,6 +87,9 @@ export function useEventSSE({
                 }
                 if (refreshTypes.includes("activities") && callbacksRef.current.onActivitiesRefresh) {
                   callbacksRef.current.onActivitiesRefresh();
+                }
+                if (refreshTypes.includes("activity-responses") && callbacksRef.current.onActivityResponsesRefresh) {
+                  callbacksRef.current.onActivityResponsesRefresh();
                 }
                 break;
             }
