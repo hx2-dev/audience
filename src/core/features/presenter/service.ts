@@ -33,27 +33,33 @@ export class PresenterService {
     return pipe(
       this.eventService.getById(updateState.eventId),
       TE.flatMap(this.checkEventAuthorization(userId)),
-      TE.flatMap(() => this.presenterQueries.upsert({ updateState })),
-      TE.tap((state: PresenterState) => {
-        return this.broadcastStateChange(updateState.eventId.toString(), state);
-      }),
+      TE.flatMap((event: Event) =>
+        pipe(
+          this.presenterQueries.upsert({ updateState }),
+          TE.tap((state: PresenterState) => {
+            const shortId = event.shortId;
+            if (shortId) {
+              return this.broadcastStateChange(shortId, state);
+            }
+            return TE.right(void 0);
+          }),
+        ),
+      ),
     );
   }
 
-  private broadcastStateChange(eventId: string, _state: PresenterState) {
+  private broadcastStateChange(shortId: string, _state: PresenterState) {
     return TE.tryCatch(
       async () => {
-        console.log(`Broadcasting state change for event ${eventId}`);
         const { broadcastToEvent } = await import(
           "~/app/api/events/[shortId]/stream/route"
         );
-        broadcastToEvent(eventId);
-        console.log(`Broadcast completed for event ${eventId}`);
+        broadcastToEvent(shortId, ["presenter-state"]);
+        console.log(
+          `[Presenter Service] Broadcast completed for shortId: ${shortId}`,
+        );
       },
-      (error) => {
-        console.error(`Broadcast failed for event ${eventId}:`, error);
-        return error as Error;
-      },
+      (error) => error as Error,
     );
   }
 

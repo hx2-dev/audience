@@ -45,6 +45,13 @@ export const thankYouActivityValidator = z.object({
   message: z.string().optional(),
 });
 
+export const iframeActivityValidator = z.object({
+  type: z.literal("iframe"),
+  title: z.string().min(1),
+  url: z.string().url(),
+  description: z.string().optional(),
+});
+
 // Union of all activity types
 export const activityDataValidator = z.discriminatedUnion("type", [
   welcomeActivityValidator,
@@ -54,6 +61,7 @@ export const activityDataValidator = z.discriminatedUnion("type", [
   rankingQuestionValidator,
   breakActivityValidator,
   thankYouActivityValidator,
+  iframeActivityValidator,
 ]);
 
 export type ActivityData = z.infer<typeof activityDataValidator>;

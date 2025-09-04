@@ -31,9 +31,10 @@ export function toTrpcError(error: Error): TRPCError {
   if (error instanceof UnauthorizedError) {
     return { code: "UNAUTHORIZED", message: error.message, name: error.name };
   }
+  console.error(error);
   return {
     code: "INTERNAL_SERVER_ERROR",
-    message: error.message,
-    name: error.name,
+    name: "InternalServerError",
+    message: "An unexpected error occurred",
   };
 }

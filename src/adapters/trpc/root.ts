@@ -2,6 +2,8 @@ import "reflect-metadata";
 import { eventRouter } from "~/adapters/trpc/routers/event";
 import { presenterRouter } from "~/adapters/trpc/routers/presenter";
 import { activitiesRouter } from "~/adapters/trpc/routers/activities";
+import { responsesRouter } from "~/adapters/trpc/routers/responses";
+import { questionsRouter } from "~/adapters/trpc/routers/questions";
 import { createCallerFactory, createTRPCRouter } from "~/adapters/trpc/trpc";
 
 /**
@@ -13,6 +15,8 @@ export const appRouter = createTRPCRouter({
   event: eventRouter,
   presenter: presenterRouter,
   activities: activitiesRouter,
+  responses: responsesRouter,
+  questions: questionsRouter,
 });
 
 // export type definition of API

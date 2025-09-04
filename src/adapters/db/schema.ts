@@ -127,7 +127,7 @@ export const events = createTable(
     updatedAt: d
       .timestamp({ withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
-      .$onUpdate(() => sql`CURRENT_TIMESTAMP`)
+      .$onUpdate(() => new Date())
       .notNull(),
     updatedBy: d
       .varchar({ length: 255 })
@@ -145,25 +145,29 @@ export const events = createTable(
 export const presenterStates = createTable(
   "presenter_state",
   (d) => ({
-    eventId: d.integer().primaryKey().references(() => events.id),
+    eventId: d
+      .integer()
+      .primaryKey()
+      .references(() => events.id),
     currentPage: d.varchar({ length: 256 }).notNull(),
     data: d.jsonb(),
     updatedAt: d
       .timestamp({ withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
-      .$onUpdate(() => sql`CURRENT_TIMESTAMP`)
+      .$onUpdate(() => new Date())
       .notNull(),
   }),
-  (t) => [
-    index("presenter_state_event_id_idx").on(t.eventId),
-  ],
+  (t) => [index("presenter_state_event_id_idx").on(t.eventId)],
 );
 
 export const activities = createTable(
   "activity",
   (d) => ({
     id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-    eventId: d.integer().notNull().references(() => events.id),
+    eventId: d
+      .integer()
+      .notNull()
+      .references(() => events.id),
     name: d.varchar({ length: 256 }).notNull(),
     type: d.varchar({ length: 50 }).notNull(),
     data: d.jsonb().notNull(),
@@ -175,7 +179,7 @@ export const activities = createTable(
     updatedAt: d
       .timestamp({ withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
-      .$onUpdate(() => sql`CURRENT_TIMESTAMP`)
+      .$onUpdate(() => new Date())
       .notNull(),
     updatedBy: d
       .varchar({ length: 255 })
@@ -186,5 +190,66 @@ export const activities = createTable(
   (t) => [
     index("activity_event_id_idx").on(t.eventId),
     index("activity_order_idx").on(t.eventId, t.order),
+  ],
+);
+
+export const activityResponses = createTable(
+  "activity_response",
+  (d) => ({
+    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+    activityId: d
+      .integer()
+      .notNull()
+      .references(() => activities.id),
+    userId: d.varchar({ length: 255 }).references(() => users.id),
+    response: d.jsonb().notNull(),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (t) => [
+    index("activity_response_activity_id_idx").on(t.activityId),
+    index("activity_response_user_id_idx").on(t.userId),
+  ],
+);
+
+export const questions = createTable(
+  "question",
+  (d) => ({
+    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+    eventId: d
+      .integer()
+      .notNull()
+      .references(() => events.id),
+    question: d.text().notNull(),
+    submitterName: d.varchar({ length: 256 }),
+    submitterUserId: d.varchar({ length: 255 }).references(() => users.id),
+    isAnonymous: d.boolean().notNull().default(false),
+    isAnswered: d.boolean().notNull().default(false),
+    answer: d.text(),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .$onUpdate(() => new Date())
+      .notNull(),
+    updatedBy: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
+    deleted: d.timestamp({ withTimezone: true }),
+  }),
+  (t) => [
+    index("question_event_id_idx").on(t.eventId),
+    index("question_created_at_idx").on(t.createdAt),
   ],
 );

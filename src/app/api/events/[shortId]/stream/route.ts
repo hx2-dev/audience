@@ -4,51 +4,64 @@ import { container } from "tsyringe";
 import { EventService } from "~/core/features/events/service";
 import * as E from "fp-ts/lib/Either";
 
+export interface SSEMessage {
+  type: "connected" | "refresh";
+  data?: {
+    refreshTypes: Array<"presenter-state" | "questions" | "activities">;
+  };
+}
+
 const connections = new Map<string, Set<ReadableStreamDefaultController>>();
 
 function addConnection(
-  eventId: string,
+  shortId: string,
   controller: ReadableStreamDefaultController,
 ) {
-  if (!connections.has(eventId)) {
-    connections.set(eventId, new Set());
+  if (!connections.has(shortId)) {
+    connections.set(shortId, new Set());
   }
-  connections.get(eventId)!.add(controller);
-  console.log(`Added connection for event ${eventId}. Total connections: ${connections.get(eventId)!.size}`);
+  connections.get(shortId)!.add(controller);
+  // Connection added for shortId ${shortId}
 }
 
 function removeConnection(
-  eventId: string,
+  shortId: string,
   controller: ReadableStreamDefaultController,
 ) {
-  const eventConnections = connections.get(eventId);
+  const eventConnections = connections.get(shortId);
   if (eventConnections) {
     const wasRemoved = eventConnections.delete(controller);
     if (wasRemoved) {
-      console.log(`Removed connection for event ${eventId}. Remaining connections: ${eventConnections.size}`);
+      // Connection removed for shortId ${shortId}
     }
     if (eventConnections.size === 0) {
-      connections.delete(eventId);
-      console.log(`No more connections for event ${eventId}. Cleaned up event.`);
+      connections.delete(shortId);
+      // All connections closed for shortId ${shortId}
     }
   }
 }
 
-export function broadcastToEvent(eventId: string) {
-  console.log(`broadcastToEvent called with eventId: ${eventId} (type: ${typeof eventId})`);
-  console.log(`Current connections map keys:`, Array.from(connections.keys()));
+export function broadcastToEvent(
+  shortId: string, 
+  refreshTypes: Array<"presenter-state" | "questions" | "activities"> = ["presenter-state"]
+) {
+  // Broadcasting to shortId: ${shortId}, types: [${refreshTypes.join(', ')}]
   
-  const eventConnections = connections.get(eventId);
+  const eventConnections = connections.get(shortId);
   if (eventConnections && eventConnections.size > 0) {
-    const message = `data: {"type":"refresh"}\n\n`;
-    console.log(`Broadcasting to ${eventConnections.size} connections for event ${eventId}`);
+    const sseMessage: SSEMessage = {
+      type: "refresh",
+      data: { refreshTypes }
+    };
+    const message = `data: ${JSON.stringify(sseMessage)}\n\n`;
+    // Sending message to ${eventConnections.size} connections
     const deadConnections: ReadableStreamDefaultController[] = [];
     
     eventConnections.forEach((controller) => {
       try {
         controller.enqueue(new TextEncoder().encode(message));
-      } catch (error) {
-        console.log(`Dead connection detected for event ${eventId}:`, error);
+      } catch {
+        // Dead connection detected
         deadConnections.push(controller);
       }
     });
@@ -59,10 +72,10 @@ export function broadcastToEvent(eventId: string) {
     });
     
     if (deadConnections.length > 0) {
-      console.log(`Cleaned up ${deadConnections.length} dead connections for event ${eventId}`);
+      // Cleaned up ${deadConnections.length} dead connections
     }
   } else {
-    console.log(`No connections found for event ${eventId}. Available events: [${Array.from(connections.keys()).join(', ')}]`);
+    // No connections found for shortId ${shortId}
   }
 }
 
@@ -72,48 +85,47 @@ export async function GET(
 ) {
   try {
     const { shortId } = await params;
-    console.log(`SSE connection request for shortId: ${shortId}`);
+    // SSE connection request for shortId: ${shortId}
 
     const eventService = container.resolve<EventService>(EventService);
 
     const eventResult = await eventService.getByShortId(shortId)();
 
     if (E.isLeft(eventResult)) {
-      console.error(`Event not found for shortId: ${shortId}`);
+      // Event not found for shortId: ${shortId}
       return new Response("Event not found", { status: 404 });
     }
 
-    const event = eventResult.right;
-    const eventId = event.id.toString();
-    console.log(`SSE connection established for event ${eventId} (${shortId})`);
+    // SSE connection established for shortId ${shortId}
 
     const stream = new ReadableStream({
       start(controller) {
-        addConnection(eventId, controller);
+        addConnection(shortId, controller);
 
         const encoder = new TextEncoder();
-        controller.enqueue(encoder.encode('data: {"type":"connected"}\n\n'));
+        const connectedMessage: SSEMessage = { type: "connected" };
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(connectedMessage)}\n\n`));
 
         // Send heartbeat every 30 seconds to keep connection alive
         const heartbeat = setInterval(() => {
           try {
             controller.enqueue(encoder.encode(": heartbeat\n\n"));
-          } catch (error) {
-            console.log(`Heartbeat failed for event ${eventId}:`, error);
+          } catch {
+            // Heartbeat failed for shortId ${shortId}
             clearInterval(heartbeat);
             // Add small delay before removing connection to allow any pending broadcasts
             setTimeout(() => {
-              removeConnection(eventId, controller);
+              removeConnection(shortId, controller);
             }, 100);
           }
         }, 30000);
 
         return () => {
-          console.log(`Connection cleanup requested for event ${eventId}`);
+          // Connection cleanup requested for shortId ${shortId}
           clearInterval(heartbeat);
           // Add small delay before removing connection to allow any pending broadcasts
           setTimeout(() => {
-            removeConnection(eventId, controller);
+            removeConnection(shortId, controller);
           }, 100);
         };
       },
