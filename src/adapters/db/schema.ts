@@ -141,3 +141,50 @@ export const events = createTable(
     index("short_id_idx").on(t.shortId),
   ],
 );
+
+export const presenterStates = createTable(
+  "presenter_state",
+  (d) => ({
+    eventId: d.integer().primaryKey().references(() => events.id),
+    currentPage: d.varchar({ length: 256 }).notNull(),
+    data: d.jsonb(),
+    updatedAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .$onUpdate(() => sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (t) => [
+    index("presenter_state_event_id_idx").on(t.eventId),
+  ],
+);
+
+export const activities = createTable(
+  "activity",
+  (d) => ({
+    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+    eventId: d.integer().notNull().references(() => events.id),
+    name: d.varchar({ length: 256 }).notNull(),
+    type: d.varchar({ length: 50 }).notNull(),
+    data: d.jsonb().notNull(),
+    order: d.integer().notNull().default(0),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .$onUpdate(() => sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedBy: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
+    deleted: d.timestamp({ withTimezone: true }),
+  }),
+  (t) => [
+    index("activity_event_id_idx").on(t.eventId),
+    index("activity_order_idx").on(t.eventId, t.order),
+  ],
+);

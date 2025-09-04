@@ -18,6 +18,10 @@ export class EventService {
     return this.eventQueries.getById({ id });
   }
 
+  getByShortId(shortId: string): TaskEither<Error, Event> {
+    return this.eventQueries.getByShortId({ shortId });
+  }
+
   create(createEvent: CreateEvent, userId: string): TaskEither<Error, Event> {
     return this.eventQueries.create({ createEvent, userId });
   }

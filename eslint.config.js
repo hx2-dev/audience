@@ -9,7 +9,12 @@ const compat = new FlatCompat({
 
 export default tseslint.config(
   {
-    ignores: [".next", "postcss.config.js", "prettier.config.js"],
+    ignores: [
+      ".next",
+      "postcss.config.js",
+      "prettier.config.js",
+      "next-env.d.ts",
+    ],
   },
   ...compat.extends("next/core-web-vitals"),
   {

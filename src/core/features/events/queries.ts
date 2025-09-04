@@ -73,7 +73,10 @@ export class EventQueries {
     return TE.tryCatch(
       async () => {
         const event = await connection.query.events.findFirst({
-          where: and(eq(events.shortId, shortId), isNull(events.deleted)),
+          where: and(
+            eq(events.shortId, shortId.toUpperCase()),
+            isNull(events.deleted),
+          ),
         });
 
         if (!event) {
@@ -126,7 +129,11 @@ export class EventQueries {
       async () => {
         const [event]: UndefinedToNullable<Event>[] = await connection
           .update(events)
-          .set({ shortId, updatedBy: userId, updatedAt: new Date() })
+          .set({
+            shortId: shortId.toUpperCase(),
+            updatedBy: userId,
+            updatedAt: new Date(),
+          })
           .where(eq(events.id, eventId))
           .returning()
           .execute();

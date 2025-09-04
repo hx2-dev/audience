@@ -36,6 +36,12 @@ export const eventRouter = createTRPCRouter({
       return serviceCall((service) => service.getById(input.id));
     }),
 
+  getByShortId: publicProcedure
+    .input(z.object({ shortId: z.string().length(6) }))
+    .query<Event>(({ input }) => {
+      return serviceCall((service) => service.getByShortId(input.shortId));
+    }),
+
   create: protectedProcedure
     .input(createEventValidator)
     .mutation<Event>(async ({ ctx, input }) => {
