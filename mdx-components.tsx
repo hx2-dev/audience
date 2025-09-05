@@ -36,7 +36,18 @@ const components: MDXComponents = {
   pre: ({ children, ...props }) => <Pre {...props}>{children}</Pre>,
   strong: ({ children }) => <Strong>{children}</Strong>,
   em: ({ children }) => <Em>{children}</Em>,
-  a: ({ href, children }) => <Link href={href}>{children}</Link>,
+  a: ({
+    href,
+    children,
+    ...props
+  }: {
+    href?: string;
+    children: React.ReactNode;
+  }) => (
+    <Link href={href ?? "#"} {...props}>
+      {children}
+    </Link>
+  ),
   table: ({ children }) => <Table>{children}</Table>,
   thead: ({ children }) => <THead>{children}</THead>,
   tbody: ({ children }) => <TBody>{children}</TBody>,

@@ -1,12 +1,9 @@
 import Link from "next/link";
-import { auth } from "~/core/generic/auth";
 import { HydrateClient } from "~/trpc/server";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
 export default async function Home() {
-  const session = await auth();
-
   return (
     <HydrateClient>
       <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900">
