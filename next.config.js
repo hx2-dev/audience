@@ -15,6 +15,7 @@ const config = {
   typescript: {
     ignoreBuildErrors: process.env.CI === "true",
   },
+  allowedDevOrigins: ["audience-dev.hx2.dev"],
 };
 
 const withMDX = createMDX({});
