@@ -55,14 +55,19 @@ export function PresenterTabsNavigation({ eventId, currentPage }: PresenterTabsN
   return (
     <div className="mb-6">
       {/* Tabs-styled navigation */}
-      <div className="bg-muted text-muted-foreground flex h-9 w-full items-center justify-center rounded-lg p-[3px]">
+      <div className="bg-muted text-muted-foreground flex flex-wrap gap-[3px] rounded-lg p-[3px]">
         {navItems.map((item) => (
           <Link
             key={item.key}
             href={item.href}
+            prefetch={true}
             className={cn(
-              // Base styles from TabsTrigger with flex-1 for even distribution
-              "text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+              // Base styles with flex-grow for responsive sizing, min-width ensures readability
+              "text-foreground dark:text-muted-foreground inline-flex h-9 flex-grow items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+              // Minimum width to ensure tabs don't get too small
+              "min-w-[120px]",
+              // On larger screens, distribute evenly (basis-0 allows flex-grow to work)
+              "sm:flex-1 sm:basis-0",
               // Active state styles
               currentPage === item.key && "bg-background dark:text-foreground shadow-sm dark:border-input dark:bg-input/30",
               // Hover styles

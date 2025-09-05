@@ -101,11 +101,11 @@ export function AudiencePageClient({
           onValueChange={setActiveTab}
           className="space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="activity" className="flex items-center gap-2">
+          <TabsList className="flex flex-wrap gap-1 w-full h-auto p-1">
+            <TabsTrigger value="activity" className="flex items-center gap-2 flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
               Activity
             </TabsTrigger>
-            <TabsTrigger value="questions" className="flex items-center gap-2">
+            <TabsTrigger value="questions" className="flex items-center gap-2 flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
               <MessageSquare className="h-4 w-4" />
               Questions {questions.length > 0 && `(${questions.length})`}
             </TabsTrigger>

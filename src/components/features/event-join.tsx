@@ -2,9 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "~/components/ui/input-otp";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "~/components/ui/input-otp";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 
 export function EventJoinForm() {
   const [eventId, setEventId] = useState("");
@@ -27,7 +37,7 @@ export function EventJoinForm() {
       });
 
       if (response.ok) {
-        router.push(`/audience/${eventId}`);
+        router.push(`/audience/${eventId}/activity`);
       } else if (response.status === 404) {
         setError("Event not found. Please check the event ID.");
       } else {
@@ -41,8 +51,8 @@ export function EventJoinForm() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="text-center pb-4">
+    <Card className="mx-auto w-full max-w-md">
+      <CardHeader className="pb-4 text-center">
         <CardTitle className="text-xl sm:text-2xl">Join Event</CardTitle>
         <CardDescription className="text-sm sm:text-base">
           Enter the 6-character event ID to join the presentation
@@ -65,15 +75,17 @@ export function EventJoinForm() {
               <InputOTPSlot index={5} />
             </InputOTPGroup>
           </InputOTP>
-          
+
           {error && (
-            <p className="text-sm text-red-600 text-center break-words max-w-full">{error}</p>
+            <p className="max-w-full text-center text-sm break-words text-red-600">
+              {error}
+            </p>
           )}
-          
+
           <Button
             onClick={handleSubmit}
             disabled={eventId.length !== 6 || isLoading}
-            className="w-full text-base sm:text-lg min-h-[44px]"
+            className="min-h-[44px] w-full text-base sm:text-lg"
           >
             {isLoading ? "Joining..." : "Join Event"}
           </Button>

@@ -409,17 +409,17 @@ export function PresenterDashboardClient({
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-4">
-            <TabsTrigger value="control" className="text-sm sm:text-base">
+          <TabsList className="flex flex-wrap gap-1 w-full h-auto p-1">
+            <TabsTrigger value="control" className="text-sm sm:text-base flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
               Live Control
             </TabsTrigger>
-            <TabsTrigger value="activities" className="text-sm sm:text-base">
+            <TabsTrigger value="activities" className="text-sm sm:text-base flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
               Manage Activities
             </TabsTrigger>
-            <TabsTrigger value="responses" className="text-sm sm:text-base">
+            <TabsTrigger value="responses" className="text-sm sm:text-base flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
               View Responses
             </TabsTrigger>
-            <TabsTrigger value="questions" className="text-sm sm:text-base">
+            <TabsTrigger value="questions" className="text-sm sm:text-base flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
               Q&A Questions {questions.length > 0 && `(${questions.length})`}
             </TabsTrigger>
           </TabsList>

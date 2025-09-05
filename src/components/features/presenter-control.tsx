@@ -200,11 +200,11 @@ export function PresenterControl({ eventShortId, onStateUpdate }: PresenterContr
       </Card>
 
       <Tabs defaultValue="timer" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="timer">Timer</TabsTrigger>
-          <TabsTrigger value="multiple-choice">Multiple Choice</TabsTrigger>
-          <TabsTrigger value="free-response">Free Response</TabsTrigger>
-          <TabsTrigger value="ranking">Ranking</TabsTrigger>
+        <TabsList className="flex flex-wrap gap-1 w-full h-auto p-1">
+          <TabsTrigger value="timer" className="flex-grow min-w-[120px] sm:flex-1 sm:basis-0">Timer</TabsTrigger>
+          <TabsTrigger value="multiple-choice" className="flex-grow min-w-[120px] sm:flex-1 sm:basis-0">Multiple Choice</TabsTrigger>
+          <TabsTrigger value="free-response" className="flex-grow min-w-[120px] sm:flex-1 sm:basis-0">Free Response</TabsTrigger>
+          <TabsTrigger value="ranking" className="flex-grow min-w-[120px] sm:flex-1 sm:basis-0">Ranking</TabsTrigger>
         </TabsList>
         
         <TabsContent value="timer" className="space-y-4">
