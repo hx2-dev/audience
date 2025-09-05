@@ -6,6 +6,7 @@ on:
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  CI: true
 
 jobs:
   deploy:
@@ -42,8 +43,6 @@ jobs:
 
       - name: Build Next.js app
         run: bun run build
-        env:
-          DISABLE_ESLINT_PLUGIN: true
 
       - name: Run database migrations
         run: source .env && bun run db:migrate

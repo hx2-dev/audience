@@ -9,6 +9,9 @@ import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import("next").NextConfig} */
 const config = {
   pageExtensions: ["ts", "tsx", "md", "mdx"],
+  eslint: {
+    ignoreDuringBuilds: process.env.CI === "true",
+  },
 };
 
 const withMDX = createMDX({});
