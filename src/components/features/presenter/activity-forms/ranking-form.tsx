@@ -43,6 +43,7 @@ export function RankingForm({
           placeholder="Rank these items in order of preference:"
           value={rankingQuestion}
           onChange={(e) => onQuestionChange(e.target.value)}
+          required
         />
       </div>
       
@@ -55,6 +56,7 @@ export function RankingForm({
                 placeholder={`Item ${index + 1}`}
                 value={item}
                 onChange={(e) => updateRankingItem(index, e.target.value)}
+                required
               />
               {rankingItems.length > 2 && (
                 <Button

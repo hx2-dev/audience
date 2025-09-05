@@ -48,6 +48,7 @@ export function MultipleChoiceForm({
           placeholder="What is your favorite color?"
           value={mcQuestion}
           onChange={(e) => onQuestionChange(e.target.value)}
+          required
         />
       </div>
       
@@ -69,6 +70,7 @@ export function MultipleChoiceForm({
                 placeholder={`Option ${index + 1}`}
                 value={option}
                 onChange={(e) => updateMcOption(index, e.target.value)}
+                required
               />
               {mcOptions.length > 2 && (
                 <Button

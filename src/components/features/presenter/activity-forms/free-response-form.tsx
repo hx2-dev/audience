@@ -30,6 +30,7 @@ export function FreeResponseForm({
           placeholder="What do you think about this topic?"
           value={frQuestion}
           onChange={(e) => onQuestionChange(e.target.value)}
+          required
         />
       </div>
       <div>

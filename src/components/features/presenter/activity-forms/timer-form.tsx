@@ -31,6 +31,7 @@ export function TimerForm({ timerDuration, timerTitle, onDurationChange, onTitle
           max={3600}
           value={timerDuration}
           onChange={(e) => onDurationChange(Number(e.target.value))}
+          required
         />
       </div>
     </div>
