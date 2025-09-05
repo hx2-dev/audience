@@ -18,6 +18,16 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          # If source files changed but packages didn't, rebuild from a prior cache.
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-
+
       - name: Install dependencies
         run: bun install
 
@@ -28,7 +38,7 @@ jobs:
         run: bun install -g vercel@latest
 
       - name: Pull environment variables
-        run: vercel env pull --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel env pull --environment=production --token=${{ secrets.VERCEL_TOKEN }} .env
 
       - name: Build Next.js app
         run: bun run build
@@ -36,7 +46,7 @@ jobs:
           DISABLE_ESLINT_PLUGIN: true
 
       - name: Run database migrations
-        run: bun run db:migrate
+        run: source .env && bun run db:migrate
 
       - name: Deploy to Vercel
         run: |
