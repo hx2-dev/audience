@@ -1,7 +1,7 @@
 import {
-  drizzle,
-  type PostgresJsTransaction,
   type PostgresJsDatabase,
+  type PostgresJsTransaction,
+  drizzle,
 } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 

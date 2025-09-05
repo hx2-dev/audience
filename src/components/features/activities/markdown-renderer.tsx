@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -109,12 +109,10 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     inline,
     className,
     children,
-    ..._props
   }: {
     inline?: boolean;
     className?: string;
     children?: React.ReactNode;
-    [key: string]: unknown;
   }) => {
     // Handle inline code - must return inline element, not block
     if (inline) {

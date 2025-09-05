@@ -1,5 +1,5 @@
 import { cn } from "~/lib/utils";
-import type { ReactNode, HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
 interface TypographyProps extends HTMLAttributes<HTMLElement> {
   children: ReactNode;

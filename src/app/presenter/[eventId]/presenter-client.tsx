@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
-import { Trash2, CheckCircle, Clock, User, LogIn } from "lucide-react";
+import { CheckCircle, Clock, LogIn, Trash2, User } from "lucide-react";
 import { PresenterControlSplit } from "~/components/features/presenter/presenter-control-split";
 import { ActivityManagerSplit } from "~/components/features/presenter/activity-manager-split";
 import { ActivityResponseCard } from "~/components/features/presenter/activity-responses/activity-response-card";
@@ -17,8 +17,8 @@ import type { Session } from "next-auth";
 import { useMultiSSEQuery } from "~/components/hooks/use-sse-query";
 import type { ActivityData } from "~/core/features/presenter/types";
 import type {
-  CreateActivity,
   Activity,
+  CreateActivity,
 } from "~/core/features/activities/types";
 import type { Question } from "~/core/features/questions/types";
 

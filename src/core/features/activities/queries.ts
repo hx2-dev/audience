@@ -1,11 +1,11 @@
 import { and, eq, isNull } from "drizzle-orm";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
-import { db, type SchemaConnection } from "~/adapters/db";
+import { type SchemaConnection, db } from "~/adapters/db";
 import { activities } from "~/adapters/db/schema";
 import { singleton } from "tsyringe";
 import type { Activity, CreateActivity, UpdateActivity } from "~/core/features/activities/types";
-import { activityDataValidator, type ActivityData } from "~/core/features/presenter/types";
+import { type ActivityData, activityDataValidator } from "~/core/features/presenter/types";
 import { NotFoundError } from "~/core/common/error";
 
 @singleton()

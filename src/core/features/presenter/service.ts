@@ -1,4 +1,4 @@
-import { injectable, inject } from "tsyringe";
+import { inject, injectable } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import type { Event } from "~/core/features/events/types";

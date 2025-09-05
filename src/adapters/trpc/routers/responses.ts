@@ -2,8 +2,8 @@ import { z } from "zod";
 import * as E from "fp-ts/lib/Either";
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
+  publicProcedure,
 } from "~/adapters/trpc/trpc";
 import {
   createActivityResponseValidator,

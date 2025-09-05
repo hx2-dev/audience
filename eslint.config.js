@@ -1,7 +1,9 @@
 import { FlatCompat } from "@eslint/eslintrc";
 import tseslint from "typescript-eslint";
-// @ts-ignore -- no types for this plugin
+// @ts-expect-error: TS7016 -- no types for this plugin
 import drizzle from "eslint-plugin-drizzle";
+// @ts-expect-error: TS7016 -- no types for this plugin
+import comments from "@eslint-community/eslint-plugin-eslint-comments/configs";
 
 const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
@@ -26,10 +28,23 @@ export default tseslint.config(
       ...tseslint.configs.recommended,
       ...tseslint.configs.recommendedTypeChecked,
       ...tseslint.configs.stylisticTypeChecked,
+      comments.recommended,
     ],
     rules: {
+      "@eslint-community/eslint-comments/require-description": "error",
+      "@eslint-community/eslint-comments/no-unused-disable": "error",
+      "@eslint-community/eslint-comments/no-unlimited-disable": "error",
+      "@eslint-community/eslint-comments/no-duplicate-disable": "error",
       "@typescript-eslint/array-type": "off",
       "@typescript-eslint/consistent-type-definitions": "off",
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        {
+          "ts-expect-error": {
+            descriptionFormat: "^: TS\\d+ .+$",
+          },
+        },
+      ],
       "@typescript-eslint/consistent-type-imports": [
         "warn",
         { prefer: "type-imports", fixStyle: "inline-type-imports" },

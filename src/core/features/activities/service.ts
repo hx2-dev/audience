@@ -3,7 +3,10 @@ import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { ActivityQueries } from "~/core/features/activities/queries";
 import { EventService } from "~/core/features/events/service";
-import { PresenterService, PresenterServiceSymbol } from "~/core/features/presenter/service";
+import {
+  PresenterService,
+  PresenterServiceSymbol,
+} from "~/core/features/presenter/service";
 import { PresenterQueries } from "~/core/features/presenter/queries";
 import { ActivityResponseQueries } from "~/core/features/responses/queries";
 import { ForbiddenError } from "~/core/common/error";
@@ -112,20 +115,26 @@ export class ActivityService {
       this.presenterService.getByEventId(updatedActivity.eventId),
       TE.flatMap((presenterState) => {
         // Check if this activity is currently being presented
-        const isCurrentlyLive = 
-          presenterState.data?.activityId === updatedActivity.id;
+        const isCurrentlyLive =
+          presenterState.data &&
+          "activityId" in presenterState.data &&
+          presenterState.data.activityId === updatedActivity.id;
 
         // For non-response activities, also check if the type matches and there's no activityId
         // This handles activities that were started before we added proper activityId tracking
-        const isLegacyLiveActivity = 
+        const isLegacyLiveActivity =
           !isCurrentlyLive &&
           presenterState.data?.type === updatedActivity.type &&
-          !presenterState.data?.activityId &&
-          ["markdown", "iframe", "welcome", "break", "thank-you"].includes(updatedActivity.type);
+          !(
+            presenterState.data &&
+            "activityId" in presenterState.data &&
+            presenterState.data.activityId
+          ) &&
+          ["markdown", "iframe", "welcome", "break", "thank-you"].includes(
+            updatedActivity.type,
+          );
 
-        const shouldUpdate = isCurrentlyLive || isLegacyLiveActivity;
-
-        if (!shouldUpdate) {
+        if (!isCurrentlyLive || isLegacyLiveActivity) {
           return TE.right(void 0);
         }
 
@@ -142,7 +151,8 @@ export class ActivityService {
             : TE.right(void 0),
           TE.flatMap(() => {
             // Update the presenter state with new activity data
-            const updatedActivityData = this.convertActivityToActivityData(updatedActivity);
+            const updatedActivityData =
+              this.convertActivityToActivityData(updatedActivity);
             return this.updatePresenterStateDirectly(
               updatedActivity.eventId,
               updatedActivity.type,
@@ -160,21 +170,35 @@ export class ActivityService {
     updatedActivity: Activity,
   ): boolean {
     // For multiple choice questions, check if options changed
-    if (originalActivity.type === "multiple-choice" && updatedActivity.type === "multiple-choice") {
+    if (
+      originalActivity.type === "multiple-choice" &&
+      updatedActivity.type === "multiple-choice"
+    ) {
       const originalData = originalActivity.data as { options: string[] };
       const updatedData = updatedActivity.data as { options: string[] };
-      return JSON.stringify(originalData.options) !== JSON.stringify(updatedData.options);
+      return (
+        JSON.stringify(originalData.options) !==
+        JSON.stringify(updatedData.options)
+      );
     }
 
     // For ranking questions, check if items changed
-    if (originalActivity.type === "ranking" && updatedActivity.type === "ranking") {
+    if (
+      originalActivity.type === "ranking" &&
+      updatedActivity.type === "ranking"
+    ) {
       const originalData = originalActivity.data as { items: string[] };
       const updatedData = updatedActivity.data as { items: string[] };
-      return JSON.stringify(originalData.items) !== JSON.stringify(updatedData.items);
+      return (
+        JSON.stringify(originalData.items) !== JSON.stringify(updatedData.items)
+      );
     }
 
     // For free response, check if max length constraints changed significantly
-    if (originalActivity.type === "free-response" && updatedActivity.type === "free-response") {
+    if (
+      originalActivity.type === "free-response" &&
+      updatedActivity.type === "free-response"
+    ) {
       const originalData = originalActivity.data as { maxLength?: number };
       const updatedData = updatedActivity.data as { maxLength?: number };
       // Only cleanup if max length was reduced significantly
@@ -209,7 +233,9 @@ export class ActivityService {
     );
   }
 
-  private broadcastActivityResponsesUpdate(shortId: string): TaskEither<Error, void> {
+  private broadcastActivityResponsesUpdate(
+    shortId: string,
+  ): TaskEither<Error, void> {
     return TE.tryCatch(
       async () => {
         const { broadcastToEvent } = await import(
@@ -264,10 +290,14 @@ export class ActivityService {
   private convertActivityToActivityData(activity: Activity): ActivityData {
     // Convert stored activity data to presenter activity data format
     const baseData = { ...activity.data, activityId: activity.id };
-    
+
     switch (activity.type) {
       case "multiple-choice": {
-        const data = activity.data as { question: string; options: string[]; allowMultiple: boolean };
+        const data = activity.data as {
+          question: string;
+          options: string[];
+          allowMultiple: boolean;
+        };
         return {
           type: "multiple-choice",
           question: data.question,
@@ -277,7 +307,11 @@ export class ActivityService {
         };
       }
       case "free-response": {
-        const data = activity.data as { question: string; placeholder?: string; maxLength?: number };
+        const data = activity.data as {
+          question: string;
+          placeholder?: string;
+          maxLength?: number;
+        };
         return {
           type: "free-response",
           question: data.question,
@@ -304,7 +338,11 @@ export class ActivityService {
         };
       }
       case "iframe": {
-        const data = activity.data as { title: string; url: string; description?: string };
+        const data = activity.data as {
+          title: string;
+          url: string;
+          description?: string;
+        };
         return {
           type: "iframe",
           title: data.title,
@@ -313,7 +351,11 @@ export class ActivityService {
         };
       }
       case "timer": {
-        const data = activity.data as { durationMs: number; startedAt: Date; title?: string };
+        const data = activity.data as {
+          durationMs: number;
+          startedAt: Date;
+          title?: string;
+        };
         return {
           type: "timer",
           durationMs: data.durationMs,

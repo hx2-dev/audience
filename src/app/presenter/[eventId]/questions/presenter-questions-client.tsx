@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
-import { Trash2, CheckCircle, Clock, User, LogIn } from "lucide-react";
+import { CheckCircle, Clock, LogIn, Trash2, User } from "lucide-react";
 import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { api } from "~/trpc/react";
 import type { Session } from "next-auth";

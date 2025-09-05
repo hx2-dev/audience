@@ -158,22 +158,39 @@ export function ActivityListItem({ activity, index, onUpdate, onDelete, onStart 
   const getActivityDetails = () => {
     switch (activity.type) {
       case "multiple-choice":
-        return `${(activity.data as { options: string[] }).options?.length ?? 0} options`;
-      case "timer":
-        return `${Math.floor(activity.data.durationMs / 1000)}s`;
-      case "free-response":
-        return activity.data.maxLength ? `Max ${activity.data.maxLength} chars` : "";
-      case "ranking":
-        return `${(activity.data as { items: string[] }).items?.length ?? 0} items`;
-      case "markdown":
-        return (activity.data as { title?: string }).title ?? "Content";
-      case "iframe":
-        try {
-          const url = (activity.data as { url: string }).url;
-          return url ? new URL(url).hostname : "";
-        } catch {
-          return "Invalid URL";
+        if (activity.data.type === "multiple-choice") {
+          return `${activity.data.options?.length ?? 0} options`;
         }
+        return "";
+      case "timer":
+        if (activity.data.type === "timer") {
+          return `${Math.floor(activity.data.durationMs / 1000)}s`;
+        }
+        return "";
+      case "free-response":
+        if (activity.data.type === "free-response") {
+          return activity.data.maxLength ? `Max ${activity.data.maxLength} chars` : "";
+        }
+        return "";
+      case "ranking":
+        if (activity.data.type === "ranking") {
+          return `${activity.data.items?.length ?? 0} items`;
+        }
+        return "";
+      case "markdown":
+        if (activity.data.type === "markdown") {
+          return activity.data.title ?? "Content";
+        }
+        return "";
+      case "iframe":
+        if (activity.data.type === "iframe") {
+          try {
+            return activity.data.url ? new URL(activity.data.url).hostname : "";
+          } catch {
+            return "Invalid URL";
+          }
+        }
+        return "";
       default:
         return "";
     }

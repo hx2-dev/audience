@@ -5,7 +5,7 @@ import { signOut } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { User, LogIn } from "lucide-react";
+import { LogIn, User } from "lucide-react";
 import { PresenterControlSplit } from "~/components/features/presenter/presenter-control-split";
 import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { api } from "~/trpc/react";

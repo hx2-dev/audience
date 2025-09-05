@@ -9,7 +9,7 @@ import { createQuestionValidator } from "~/core/features/questions/types";
 import { QuestionService } from "~/core/features/questions/service";
 import { container } from "tsyringe";
 import { toTrpcError } from "~/core/common/error";
-import type { Question, PublicQuestion } from "~/core/features/questions/types";
+import type { PublicQuestion, Question } from "~/core/features/questions/types";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 
 const serviceCall = async <T>(

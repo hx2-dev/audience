@@ -1,7 +1,7 @@
 import { inject, singleton } from "tsyringe";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
-import type { Event, CreateEvent, UpdateEvent } from "./types";
+import type { CreateEvent, Event, UpdateEvent } from "./types";
 import { EventQueries } from "./queries";
 import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import { pipe } from "fp-ts/lib/function";

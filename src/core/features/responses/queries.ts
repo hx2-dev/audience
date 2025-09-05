@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
-import { db, type SchemaConnection } from "~/adapters/db";
+import { type SchemaConnection, db } from "~/adapters/db";
 import { activityResponses } from "~/adapters/db/schema";
 import { singleton } from "tsyringe";
 import type {

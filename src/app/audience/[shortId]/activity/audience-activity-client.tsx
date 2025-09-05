@@ -148,12 +148,20 @@ export function AudienceActivityPageClient({
         />
 
         {/* Activity Content */}
-        <ActivityTab
-          presenterState={presenterState}
-          userResponse={combinedData?.userResponse ?? null}
-          allResponses={combinedData?.allResponses ?? []}
-          refetchData={combinedDataQuery.refetch}
-        />
+        {presenterState ? (
+          <ActivityTab
+            presenterState={presenterState}
+            userResponse={combinedData?.userResponse ?? null}
+            allResponses={combinedData?.allResponses ?? []}
+            refetchData={combinedDataQuery.refetch}
+          />
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400">
+              Waiting for presenter to start an activity...
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

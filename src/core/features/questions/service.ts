@@ -5,9 +5,9 @@ import { QuestionQueries } from "~/core/features/questions/queries";
 import { EventService } from "~/core/features/events/service";
 import { ForbiddenError } from "~/core/common/error";
 import type {
-  Question,
   CreateQuestion,
   PublicQuestion,
+  Question,
 } from "~/core/features/questions/types";
 import type { Event } from "~/core/features/events/types";
 import { pipe } from "fp-ts/lib/function";
@@ -33,7 +33,7 @@ export class QuestionService {
   }
 
   private toPublicQuestion = (question: Question): PublicQuestion => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- peeling off the submitterUserId is intentional
     const { submitterUserId, ...publicQuestion } = question;
     return publicQuestion;
   };

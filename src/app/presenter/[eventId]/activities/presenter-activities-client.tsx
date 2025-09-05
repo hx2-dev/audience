@@ -5,15 +5,15 @@ import { signOut } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { User, LogIn } from "lucide-react";
+import { LogIn, User } from "lucide-react";
 import { ActivityManagerSplit } from "~/components/features/presenter/activity-manager-split";
 import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { api } from "~/trpc/react";
 import type { Session } from "next-auth";
 import { useMultiSSEQuery } from "~/components/hooks/use-sse-query";
 import type {
-  CreateActivity,
   Activity,
+  CreateActivity,
 } from "~/core/features/activities/types";
 import { PresenterTabsNavigation } from "~/components/features/presenter/presenter-tabs-navigation";
 
