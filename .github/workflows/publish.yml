@@ -24,6 +24,9 @@ jobs:
       - name: Run linting
         run: bun run lint
 
+      - name: Install Vercel CLI
+        run: bun install -g vercel@latest
+
       - name: Pull environment variables
         run: vercel env pull --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
@@ -31,9 +34,6 @@ jobs:
         run: bun run build
         env:
           DISABLE_ESLINT_PLUGIN: true
-
-      - name: Install Vercel CLI
-        run: bun install -g vercel@latest
 
       - name: Run database migrations
         run: bun run db:migrate
