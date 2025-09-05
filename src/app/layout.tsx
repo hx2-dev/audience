@@ -11,7 +11,30 @@ import { Toaster } from "~/components/ui/sonner";
 export const metadata: Metadata = {
   title: "hx2 Audience",
   description: "Join interactive events and engage with real-time activities",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [
+    { rel: "icon", url: "/favicon.ico" },
+    {
+      rel: "manifest",
+      url: "/site.webmanifest",
+    },
+    {
+      rel: "apple-touch-icon",
+      sizes: "180x180",
+      url: "/apple-touch-icon.png",
+    },
+    {
+      rel: "icon",
+      type: "image/png",
+      sizes: "32x32",
+      url: "/favicon-32x32.png",
+    },
+    {
+      rel: "icon",
+      type: "image/png",
+      sizes: "16x16",
+      url: "/favicon-16x16.png",
+    },
+  ],
 };
 
 const geist = Geist({
