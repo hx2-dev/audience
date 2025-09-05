@@ -9,7 +9,7 @@ export function H1({ children, className, ...props }: TypographyProps) {
   return (
     <h1
       className={cn(
-        "scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl",
+        "max-w-prose scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl [&:not(:first-child)]:mt-10",
         className,
       )}
       {...props}
@@ -23,7 +23,7 @@ export function H2({ children, className, ...props }: TypographyProps) {
   return (
     <h2
       className={cn(
-        "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0",
+        "max-w-prose scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 [&:not(:first-child)]:mt-10",
         className,
       )}
       {...props}
@@ -37,7 +37,7 @@ export function H3({ children, className, ...props }: TypographyProps) {
   return (
     <h3
       className={cn(
-        "scroll-m-20 text-2xl font-semibold tracking-tight",
+        "max-w-prose scroll-m-20 text-2xl font-semibold tracking-tight [&:not(:first-child)]:mt-8",
         className,
       )}
       {...props}
@@ -51,7 +51,7 @@ export function H4({ children, className, ...props }: TypographyProps) {
   return (
     <h4
       className={cn(
-        "scroll-m-20 text-xl font-semibold tracking-tight",
+        "max-w-prose scroll-m-20 text-xl font-semibold tracking-tight [&:not(:first-child)]:mt-8",
         className,
       )}
       {...props}
@@ -64,7 +64,7 @@ export function H4({ children, className, ...props }: TypographyProps) {
 export function P({ children, className, ...props }: TypographyProps) {
   return (
     <p
-      className={cn("leading-7 [&:not(:first-child)]:mt-6", className)}
+      className={cn("max-w-prose leading-7 [&:not(:first-child)]:mt-6", className)}
       {...props}
     >
       {children}
@@ -75,7 +75,10 @@ export function P({ children, className, ...props }: TypographyProps) {
 export function Blockquote({ children, className, ...props }: TypographyProps) {
   return (
     <blockquote
-      className={cn("mt-6 border-l-2 pl-6 italic", className)}
+      className={cn(
+        "my-6 max-w-prose border-l-4 border-gray-300 pl-6 italic text-gray-700 dark:border-gray-600 dark:text-gray-300 [&:not(:first-child)]:mt-6",
+        className,
+      )}
       {...props}
     >
       {children}
@@ -99,7 +102,7 @@ export function InlineCode({ children, className, ...props }: TypographyProps) {
 
 export function Lead({ children, className, ...props }: TypographyProps) {
   return (
-    <p className={cn("text-muted-foreground text-xl", className)} {...props}>
+    <p className={cn("max-w-prose text-muted-foreground text-xl", className)} {...props}>
       {children}
     </p>
   );
@@ -126,7 +129,7 @@ export function Small({ children, className, ...props }: TypographyProps) {
 
 export function Muted({ children, className, ...props }: TypographyProps) {
   return (
-    <p className={cn("text-muted-foreground text-sm", className)} {...props}>
+    <p className={cn("max-w-prose text-muted-foreground text-sm", className)} {...props}>
       {children}
     </p>
   );
@@ -134,7 +137,7 @@ export function Muted({ children, className, ...props }: TypographyProps) {
 
 export function UL({ children, className, ...props }: TypographyProps) {
   return (
-    <ul className={cn("my-6 ml-6 list-disc [&>li]:mt-2", className)} {...props}>
+    <ul className={cn("my-6 ml-6 max-w-prose list-disc [&>li]:mt-2", className)} {...props}>
       {children}
     </ul>
   );
@@ -143,7 +146,7 @@ export function UL({ children, className, ...props }: TypographyProps) {
 export function OL({ children, className, ...props }: TypographyProps) {
   return (
     <ol
-      className={cn("my-6 ml-6 list-decimal [&>li]:mt-2", className)}
+      className={cn("my-6 ml-6 max-w-prose list-decimal [&>li]:mt-2", className)}
       {...props}
     >
       {children}
@@ -167,7 +170,7 @@ export function Pre({ children, className, ...props }: TypographyProps) {
   return (
     <pre
       className={cn(
-        "mt-6 mb-4 overflow-x-auto rounded-lg bg-slate-900 p-4",
+        "mt-6 mb-4 max-w-prose overflow-x-auto rounded-lg bg-slate-900 p-4",
         className,
       )}
       {...props}
