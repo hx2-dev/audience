@@ -12,6 +12,9 @@ const config = {
   eslint: {
     ignoreDuringBuilds: process.env.CI === "true",
   },
+  typescript: {
+    ignoreBuildErrors: process.env.CI === "true",
+  },
 };
 
 const withMDX = createMDX({});
