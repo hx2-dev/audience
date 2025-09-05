@@ -48,7 +48,7 @@ export function MultipleChoiceControl({ onStart, isUpdating }: MultipleChoiceCon
   };
 
   return (
-    <Card>
+    <Card className="bg-slate-100 dark:bg-slate-800">
       <CardHeader>
         <CardTitle>Multiple Choice Question</CardTitle>
         <CardDescription>Create a multiple choice question</CardDescription>

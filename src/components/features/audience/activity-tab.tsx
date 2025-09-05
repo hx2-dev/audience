@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { WelcomeActivity } from "~/components/features/activities/welcome-activity";
 import { TimerActivity } from "~/components/features/activities/timer-activity";
 import { MultipleChoiceActivity } from "~/components/features/activities/multiple-choice-activity";
@@ -25,7 +25,13 @@ const ActivityDataContext = React.createContext<{
 export const useActivityData = () => {
   const context = React.useContext(ActivityDataContext);
   return (
-    context ?? { userResponse: null, allResponses: [], refetchData: () => { /* no-op */ } }
+    context ?? {
+      userResponse: null,
+      allResponses: [],
+      refetchData: () => {
+        /* no-op */
+      },
+    }
   );
 };
 
@@ -112,9 +118,39 @@ export function ActivityTab({
     );
   };
 
+  const getActivityTitle = () => {
+    if (!presenterState?.data) return null;
+
+    switch (presenterState.data.type) {
+      case "multiple-choice":
+        return "Multiple Choice";
+      case "free-response":
+        return "Free Response";
+      case "ranking":
+        return "Ranking";
+      case "timer":
+        return presenterState.data.title ?? "Timer";
+      case "markdown":
+        return presenterState.data.title ?? "Content";
+      case "iframe":
+        return presenterState.data.title ?? "Content";
+      default:
+        return null;
+    }
+  };
+
+  const activityTitle = getActivityTitle();
+
   return (
-    <Card>
-      <CardContent className="p-4 sm:p-6">{renderCurrentPage()}</CardContent>
+    <Card className="bg-slate-100 dark:bg-slate-800">
+      {activityTitle && (
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg sm:text-xl">{activityTitle}</CardTitle>
+        </CardHeader>
+      )}
+      <CardContent className={activityTitle ? "pt-0" : "p-4 sm:p-6"}>
+        {renderCurrentPage()}
+      </CardContent>
     </Card>
   );
 }

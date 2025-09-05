@@ -91,13 +91,7 @@ export function MultipleChoiceActivity({ data }: MultipleChoiceActivityProps) {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg sm:text-xl">
-          Multiple Choice Question
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6">
         <div className="text-base font-medium break-words sm:text-lg">
           {data.question}
         </div>
@@ -143,7 +137,6 @@ export function MultipleChoiceActivity({ data }: MultipleChoiceActivityProps) {
             {isSubmitting ? "Submitting..." : "Submit Response"}
           </Button>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }

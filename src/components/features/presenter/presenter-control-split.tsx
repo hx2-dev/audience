@@ -42,7 +42,7 @@ export function PresenterControlSplit({ eventShortId, onStateUpdate }: Presenter
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-slate-100 dark:bg-slate-800">
         <CardHeader>
           <CardTitle>Event Control</CardTitle>
           <CardDescription>
@@ -83,7 +83,7 @@ export function PresenterControlSplit({ eventShortId, onStateUpdate }: Presenter
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-slate-100 dark:bg-slate-800">
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>

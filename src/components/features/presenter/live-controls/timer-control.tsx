@@ -26,7 +26,7 @@ export function TimerControl({ onStart, isUpdating }: TimerControlProps) {
   };
 
   return (
-    <Card>
+    <Card className="bg-slate-100 dark:bg-slate-800">
       <CardHeader>
         <CardTitle>Timer</CardTitle>
         <CardDescription>Start a countdown timer for activities</CardDescription>

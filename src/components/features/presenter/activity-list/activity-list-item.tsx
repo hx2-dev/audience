@@ -257,7 +257,7 @@ export function ActivityListItem({ activity, index, onUpdate, onDelete, onStart 
 
   return (
     <>
-      <Card>
+      <Card className="bg-slate-100 dark:bg-slate-800">
         <CardContent className="pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">

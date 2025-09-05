@@ -44,14 +44,14 @@ export function FreeResponseResults({
 
     // Normalize and aggregate responses
     const responseMap = new Map<string, { text: string; count: number }>();
-    
+
     allResponses.forEach((response) => {
       const responseData = response.response;
-      if (typeof responseData === 'string') {
+      if (typeof responseData === "string") {
         // Normalize: trim and convert to lowercase for grouping
         const normalized = responseData.trim().toLowerCase();
         const original = responseData.trim();
-        
+
         if (normalized) {
           const existing = responseMap.get(normalized);
           if (existing) {
@@ -75,53 +75,69 @@ export function FreeResponseResults({
   }, [allResponses]);
 
   return (
-    <div className="py-4 sm:py-8 space-y-4">
+    <div className="space-y-4">
       {showSubmissionBanner && (
-        <Card className="border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-400">
-          <CardContent className="pt-4 sm:pt-6 text-center">
-            <div className="text-green-600 dark:text-green-400 text-base sm:text-lg font-semibold mb-2">
+        <Card className="mb-4 border-green-500 bg-green-50 dark:border-green-400 dark:bg-green-900/20">
+          <CardContent className="pt-4 text-center sm:pt-6">
+            <div className="mb-2 text-base font-semibold text-green-600 sm:text-lg dark:text-green-400">
               ✓ Response Submitted
             </div>
-            <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
+            <p className="text-sm text-gray-600 sm:text-base dark:text-gray-300">
               Thank you for your response!
             </p>
-            <div className="mt-4 p-3 sm:p-4 bg-white dark:bg-gray-800 rounded-lg border text-left">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Your response:</p>
-              <p className="text-gray-800 dark:text-gray-200 text-sm sm:text-base break-words">{userResponse}</p>
+            <div className="mt-4 rounded-lg border bg-white p-3 text-left sm:p-4 dark:bg-gray-800">
+              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Your response:
+              </p>
+              <p className="text-sm break-words text-gray-800 sm:text-base dark:text-gray-200">
+                {userResponse}
+              </p>
             </div>
           </CardContent>
         </Card>
       )}
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Responses</CardTitle>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {aggregatedResults.totalResponses} total response{aggregatedResults.totalResponses !== 1 ? 's' : ''}
+            {aggregatedResults.totalResponses} total response
+            {aggregatedResults.totalResponses !== 1 ? "s" : ""}
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
           {aggregatedResults.responses.map((item, index) => {
-            const isUserResponse = userResponse.trim().toLowerCase() === item.text.toLowerCase();
-            
+            const isUserResponse =
+              userResponse.trim().toLowerCase() === item.text.toLowerCase();
+
             return (
-              <div key={index} className="p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                <div className="flex justify-between items-start gap-3">
-                  <p className={`text-sm sm:text-base break-words flex-1 ${
-                    isUserResponse ? 'font-semibold text-green-700 dark:text-green-300' : 'text-gray-800 dark:text-gray-200'
-                  }`}>
-                    {isUserResponse && '✓ '}{item.text}
+              <div
+                key={index}
+                className="rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4 dark:border-gray-700 dark:bg-gray-800"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p
+                    className={`flex-1 text-sm break-words sm:text-base ${
+                      isUserResponse
+                        ? "font-semibold text-green-700 dark:text-green-300"
+                        : "text-gray-800 dark:text-gray-200"
+                    }`}
+                  >
+                    {isUserResponse && "✓ "}
+                    {item.text}
                   </p>
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 shrink-0">
-                    {item.count} {item.count === 1 ? 'response' : 'responses'}
+                  <span className="shrink-0 text-sm font-medium text-gray-600 dark:text-gray-400">
+                    {item.count} {item.count === 1 ? "response" : "responses"}
                   </span>
                 </div>
               </div>
             );
           })}
           {aggregatedResults.responses.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-500 dark:text-gray-400">No responses yet</p>
+            <div className="py-8 text-center">
+              <p className="text-gray-500 dark:text-gray-400">
+                No responses yet
+              </p>
             </div>
           )}
         </CardContent>

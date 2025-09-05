@@ -305,7 +305,7 @@ export function ActivityManagerSplit({
 
       <div className="space-y-4">
         {activities.length === 0 ? (
-          <Card>
+          <Card className="bg-slate-100 dark:bg-slate-800">
             <CardContent className="pt-6">
               <div className="text-center text-gray-500 py-8">
                 <p className="mb-4">No activities created yet.</p>

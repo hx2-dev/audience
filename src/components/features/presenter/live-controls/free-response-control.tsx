@@ -30,7 +30,7 @@ export function FreeResponseControl({ onStart, isUpdating }: FreeResponseControl
   };
 
   return (
-    <Card>
+    <Card className="bg-slate-100 dark:bg-slate-800">
       <CardHeader>
         <CardTitle>Free Response Question</CardTitle>
         <CardDescription>Ask an open-ended question</CardDescription>

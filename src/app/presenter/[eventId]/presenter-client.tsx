@@ -40,7 +40,7 @@ function QuestionCard({ question, onAnswer, onDelete }: QuestionCardProps) {
   };
 
   return (
-    <div className="space-y-3 rounded-lg border p-4">
+    <div className="space-y-3 rounded-lg border p-4 bg-slate-100 dark:bg-slate-800">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -388,7 +388,7 @@ export function PresenterDashboardClient({
           </TabsList>
 
           <TabsContent value="control" className="space-y-6">
-            <Card>
+            <Card className="bg-slate-100 dark:bg-slate-800">
               <CardHeader>
                 <CardTitle>Presentation Control</CardTitle>
               </CardHeader>
@@ -402,7 +402,7 @@ export function PresenterDashboardClient({
           </TabsContent>
 
           <TabsContent value="activities" className="space-y-6">
-            <Card>
+            <Card className="bg-slate-100 dark:bg-slate-800">
               <CardHeader>
                 <CardTitle>Activity Management</CardTitle>
               </CardHeader>
@@ -421,7 +421,7 @@ export function PresenterDashboardClient({
           </TabsContent>
 
           <TabsContent value="responses" className="space-y-6">
-            <Card>
+            <Card className="bg-slate-100 dark:bg-slate-800">
               <CardHeader>
                 <CardTitle>Audience Responses</CardTitle>
               </CardHeader>
@@ -448,7 +448,7 @@ export function PresenterDashboardClient({
           </TabsContent>
 
           <TabsContent value="questions" className="space-y-6">
-            <Card>
+            <Card className="bg-slate-100 dark:bg-slate-800">
               <CardHeader>
                 <CardTitle>Q&A Questions ({questions.length})</CardTitle>
               </CardHeader>

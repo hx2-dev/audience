@@ -78,13 +78,7 @@ export function FreeResponseActivity({ data }: FreeResponseActivityProps) {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg sm:text-xl">
-          Free Response Question
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6">
         <div className="text-base font-medium break-words sm:text-lg">
           {data.question}
         </div>
@@ -125,7 +119,6 @@ export function FreeResponseActivity({ data }: FreeResponseActivityProps) {
             {isSubmitting ? "Submitting..." : "Submit Response"}
           </Button>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }

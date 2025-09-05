@@ -77,7 +77,7 @@ export function MultipleChoiceResults({
   return (
     <>
       {showSubmissionBanner && (
-        <Card className="border-green-500 bg-green-50 dark:border-green-400 dark:bg-green-900/20">
+        <Card className="mb-4 border-green-500 bg-green-50 dark:border-green-400 dark:bg-green-900/20">
           <CardContent className="pt-4 text-center sm:pt-6">
             <div className="mb-2 text-base font-semibold text-green-600 sm:text-lg dark:text-green-400">
               ✓ Response Submitted
