@@ -4,7 +4,11 @@ import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { db, type SchemaConnection } from "~/adapters/db";
 import { activityResponses } from "~/adapters/db/schema";
 import { singleton } from "tsyringe";
-import type { ActivityResponse, CreateActivityResponse, UpdateActivityResponse } from "~/core/features/responses/types";
+import type {
+  ActivityResponse,
+  CreateActivityResponse,
+  UpdateActivityResponse,
+} from "~/core/features/responses/types";
 import { NotFoundError } from "~/core/common/error";
 
 @singleton()
@@ -38,7 +42,9 @@ export class ActivityResponseQueries {
       async () => {
         const results = await connection.query.activityResponses.findMany({
           where: eq(activityResponses.activityId, activityId),
-          orderBy: (activityResponses, { asc }) => [asc(activityResponses.createdAt)],
+          orderBy: (activityResponses, { asc }) => [
+            asc(activityResponses.createdAt),
+          ],
         });
 
         return results.map((response) => this.rowToResponse(response));
@@ -61,7 +67,7 @@ export class ActivityResponseQueries {
         const response = await connection.query.activityResponses.findFirst({
           where: and(
             eq(activityResponses.userId, userId),
-            eq(activityResponses.activityId, activityId)
+            eq(activityResponses.activityId, activityId),
           ),
         });
 
@@ -77,14 +83,14 @@ export class ActivityResponseQueries {
     connection = db,
   }: {
     createResponse: CreateActivityResponse;
-    userId?: string;
+    userId: string;
     connection?: SchemaConnection;
   }): TaskEither<Error, ActivityResponse> {
     return TE.tryCatch(
       async () => {
         const [response] = await connection
           .insert(activityResponses)
-          .values({ 
+          .values({
             ...createResponse,
             userId,
             response: JSON.stringify(createResponse.response),
@@ -124,10 +130,12 @@ export class ActivityResponseQueries {
           .set({
             response: JSON.stringify(updateResponse.response),
           })
-          .where(and(
-            eq(activityResponses.id, updateResponse.id),
-            userId ? eq(activityResponses.userId, userId) : undefined
-          ))
+          .where(
+            and(
+              eq(activityResponses.id, updateResponse.id),
+              userId ? eq(activityResponses.userId, userId) : undefined,
+            ),
+          )
           .returning()
           .execute();
 

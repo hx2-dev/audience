@@ -35,7 +35,7 @@ export class ActivityResponseService {
 
   submitResponse(
     createResponse: CreateActivityResponse,
-    userId?: string,
+    userId: string,
   ): TaskEither<Error, ActivityResponse> {
     return pipe(
       this.activityService.getById(createResponse.activityId),

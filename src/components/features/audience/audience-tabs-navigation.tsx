@@ -5,6 +5,12 @@ import Link from "next/link";
 import { MessageSquare } from "lucide-react";
 import { cn } from "~/lib/utils";
 
+interface QuestionsUpdateEvent extends CustomEvent {
+  detail: {
+    questionsCount: number;
+  };
+}
+
 interface AudienceTabsNavigationProps {
   shortId: string;
   currentPage: "activity" | "questions";
@@ -21,15 +27,16 @@ export function AudienceTabsNavigation({ shortId, currentPage, questionsCount = 
 
   // Listen for SSE questions updates
   useEffect(() => {
-    const handleQuestionsUpdate = (event: CustomEvent) => {
-      if (event.detail?.questionsCount !== undefined) {
-        setCurrentQuestionsCount(event.detail.questionsCount);
+    const handleQuestionsUpdate = (event: Event) => {
+      const questionsEvent = event as QuestionsUpdateEvent;
+      if (questionsEvent.detail?.questionsCount !== undefined) {
+        setCurrentQuestionsCount(questionsEvent.detail.questionsCount);
       }
     };
 
-    window.addEventListener('questions-updated', handleQuestionsUpdate as EventListener);
+    window.addEventListener('questions-updated', handleQuestionsUpdate);
     return () => {
-      window.removeEventListener('questions-updated', handleQuestionsUpdate as EventListener);
+      window.removeEventListener('questions-updated', handleQuestionsUpdate);
     };
   }, []);
 

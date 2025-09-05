@@ -59,7 +59,7 @@ export function ResultsActivity({ data }: ResultsActivityProps) {
     );
 
   // Calculate aggregated results based on activity type
-  const aggregatedResults = React.useMemo(() => {
+  const aggregatedResults = React.useMemo((): AggregatedResults | null => {
     if (!responses.length || !activity) return null;
 
     const totalResponses = responses.length;
@@ -75,11 +75,11 @@ export function ResultsActivity({ data }: ResultsActivityProps) {
         if (Array.isArray(responseData)) {
           // Multiple selection
           responseData.forEach((option: string) => {
-            optionCounts[option] = (optionCounts[option] || 0) + 1;
+            optionCounts[option] = (optionCounts[option] ?? 0) + 1;
           });
         } else if (typeof responseData === "string") {
           // Single selection
-          optionCounts[responseData] = (optionCounts[responseData] || 0) + 1;
+          optionCounts[responseData] = (optionCounts[responseData] ?? 0) + 1;
         }
       });
 
@@ -109,7 +109,7 @@ export function ResultsActivity({ data }: ResultsActivityProps) {
         ranking.forEach((item, position) => {
           // Higher position = lower score (1st place = highest score)
           const score = ranking.length - position;
-          positionScores[item] = (positionScores[item] || 0) + score;
+          positionScores[item] = (positionScores[item] ?? 0) + score;
         });
       });
 
@@ -181,7 +181,7 @@ export function ResultsActivity({ data }: ResultsActivityProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">
-            {data.title || "Activity Results"}
+            {data.title ?? "Activity Results"}
           </CardTitle>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {aggregatedResults.totalResponses} total response
@@ -195,7 +195,7 @@ export function ResultsActivity({ data }: ResultsActivityProps) {
 
           {aggregatedResults.type === "multiple-choice" && (
             <div className="space-y-3">
-              {aggregatedResults.options.map((option: string) => {
+              {aggregatedResults.options.map((option) => {
                 const count = aggregatedResults.optionCounts[option] ?? 0;
                 const percentage = aggregatedResults.percentages[option] ?? 0;
 
@@ -221,7 +221,7 @@ export function ResultsActivity({ data }: ResultsActivityProps) {
 
           {aggregatedResults.type === "ranking" && (
             <div className="space-y-3">
-              {aggregatedResults.sortedItems.map((item: any, index: number) => (
+              {aggregatedResults.sortedItems.map((item, index) => (
                 <div
                   key={item.item}
                   className="flex items-center rounded-lg bg-gray-50 p-3 dark:bg-gray-800"
