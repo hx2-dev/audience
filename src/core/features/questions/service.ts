@@ -11,6 +11,7 @@ import type {
 } from "~/core/features/questions/types";
 import type { Event } from "~/core/features/events/types";
 import { pipe } from "fp-ts/lib/function";
+import { broadcastToEvent } from "~/app/api/events/[shortId]/stream/connections";
 
 @singleton()
 export class QuestionService {
@@ -130,9 +131,6 @@ export class QuestionService {
   private broadcastQuestionChange(shortId: string) {
     return TE.tryCatch(
       async () => {
-        const { broadcastToEvent } = await import(
-          "~/app/api/events/[shortId]/stream/route"
-        );
         broadcastToEvent(shortId, ["questions"]);
       },
       (error) => error as Error,

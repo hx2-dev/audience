@@ -18,6 +18,7 @@ import type {
 import type { Event } from "~/core/features/events/types";
 import type { ActivityData } from "~/core/features/presenter/types";
 import { pipe } from "fp-ts/lib/function";
+import { broadcastToEvent } from "~/app/api/events/[shortId]/stream/connections";
 
 @singleton()
 export class ActivityService {
@@ -238,9 +239,6 @@ export class ActivityService {
   ): TaskEither<Error, void> {
     return TE.tryCatch(
       async () => {
-        const { broadcastToEvent } = await import(
-          "~/app/api/events/[shortId]/stream/route"
-        );
         broadcastToEvent(shortId, ["activity-responses"]);
       },
       (error) => error as Error,
@@ -278,9 +276,6 @@ export class ActivityService {
   private broadcastStateChange(shortId: string): TaskEither<Error, void> {
     return TE.tryCatch(
       async () => {
-        const { broadcastToEvent } = await import(
-          "~/app/api/events/[shortId]/stream/route"
-        );
         broadcastToEvent(shortId, ["presenter-state"]);
       },
       (error) => error as Error,

@@ -10,6 +10,7 @@ import type {
   UpdateActivityResponse,
 } from "~/core/features/responses/types";
 import { pipe } from "fp-ts/lib/function";
+import { broadcastToEvent } from "~/app/api/events/[shortId]/stream/connections";
 
 @singleton()
 export class ActivityResponseService {
@@ -70,9 +71,6 @@ export class ActivityResponseService {
 
     return TE.tryCatch(
       async () => {
-        const { broadcastToEvent } = await import(
-          "~/app/api/events/[shortId]/stream/route"
-        );
         broadcastToEvent(shortId, ["activity-responses"]);
       },
       (error) => error as Error,

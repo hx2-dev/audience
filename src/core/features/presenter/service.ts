@@ -10,6 +10,7 @@ import type {
   UpdatePresenterState,
 } from "~/core/features/presenter/types";
 import { pipe } from "fp-ts/lib/function";
+import { broadcastToEvent } from "~/app/api/events/[shortId]/stream/connections";
 
 export const PresenterServiceSymbol = Symbol("PresenterService");
 
@@ -51,9 +52,6 @@ export class PresenterService {
   private broadcastStateChange(shortId: string, _state: PresenterState) {
     return TE.tryCatch(
       async () => {
-        const { broadcastToEvent } = await import(
-          "~/app/api/events/[shortId]/stream/route"
-        );
         broadcastToEvent(shortId, ["presenter-state"]);
         console.log(
           `[Presenter Service] Broadcast completed for shortId: ${shortId}`,
