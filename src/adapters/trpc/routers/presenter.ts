@@ -11,7 +11,7 @@ import {
   PresenterServiceSymbol,
 } from "~/core/features/presenter/service";
 import { container } from "tsyringe";
-import { toTrpcError } from "~/core/common/error";
+import { toTrpcError, NotFoundError } from "~/core/common/error";
 import type { PresenterState } from "~/core/features/presenter/types";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import type { ActivityResponse } from "~/core/features/responses/types";
@@ -33,8 +33,22 @@ const serviceCall = async <T>(
 export const presenterRouter = createTRPCRouter({
   getByEventId: publicProcedure
     .input(z.object({ eventId: z.number().int().min(1) }))
-    .query<PresenterState>(({ input }) => {
-      return serviceCall((service) => service.getByEventId(input.eventId));
+    .query<PresenterState | null>(async ({ input }) => {
+      const service = container.resolve<PresenterService>(
+        PresenterServiceSymbol,
+      );
+      const result = await service.getByEventId(input.eventId)();
+
+      return E.match(
+        (error: Error) => {
+          // If it's a NotFoundError, return null instead of throwing
+          if (error instanceof NotFoundError) {
+            return null;
+          }
+          throw toTrpcError(error);
+        },
+        (data: PresenterState) => data,
+      )(result);
     }),
 
   getStateWithUserResponse: publicProcedure
@@ -45,13 +59,28 @@ export const presenterRouter = createTRPCRouter({
       }),
     )
     .query<{
-      presenterState: PresenterState;
+      presenterState: PresenterState | null;
       userResponse: ActivityResponse | null;
       allResponses: ActivityResponse[];
     }>(async ({ input }) => {
-      const presenterState = await serviceCall((service) =>
-        service.getByEventId(input.eventId),
+      const service = container.resolve<PresenterService>(
+        PresenterServiceSymbol,
       );
+      const result = await service.getByEventId(input.eventId)();
+
+      // Check if it's a NotFoundError
+      if (E.isLeft(result)) {
+        if (result.left instanceof NotFoundError) {
+          return {
+            presenterState: null,
+            userResponse: null,
+            allResponses: [],
+          };
+        }
+        throw toTrpcError(result.left);
+      }
+
+      const presenterState = result.right;
 
       let userResponse = null;
       if (

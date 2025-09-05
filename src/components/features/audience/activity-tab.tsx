@@ -36,7 +36,7 @@ export const useActivityData = () => {
 };
 
 interface ActivityTabProps {
-  presenterState: PresenterState;
+  presenterState: PresenterState | null;
   userResponse: ActivityResponse | null;
   allResponses: ActivityResponse[];
   refetchData: () => void;
@@ -60,7 +60,7 @@ export function ActivityTab({
     if (!presenterState.data) {
       return (
         <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-          No activity data available
+          Waiting for activity...
         </div>
       );
     }
