@@ -55,6 +55,12 @@ export const iframeActivityValidator = z.object({
   description: z.string().optional(),
 });
 
+export const markdownActivityValidator = z.object({
+  type: z.literal("markdown"),
+  title: z.string().optional(),
+  content: z.string().min(1),
+});
+
 export const resultsActivityValidator = z.object({
   type: z.literal("results"),
   activityId: z.number().int().min(1),
@@ -71,6 +77,7 @@ export const activityDataValidator = z.discriminatedUnion("type", [
   breakActivityValidator,
   thankYouActivityValidator,
   iframeActivityValidator,
+  markdownActivityValidator,
   resultsActivityValidator,
 ]);
 

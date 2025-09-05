@@ -9,6 +9,8 @@ import { FreeResponseActivity } from "~/components/features/activities/free-resp
 import { RankingActivity } from "~/components/features/activities/ranking-activity";
 import { BreakActivity } from "~/components/features/activities/break-activity";
 import { ThankYouActivity } from "~/components/features/activities/thank-you-activity";
+import { MarkdownActivity } from "~/components/features/activities/markdown-activity";
+import { IframeActivity } from "~/components/features/activities/iframe-activity";
 import { ResultsActivity } from "~/components/features/activities/results-activity";
 import type { ActivityResponse } from "~/core/features/responses/types";
 import type { PresenterState } from "~/core/features/presenter/types";
@@ -81,6 +83,10 @@ export function ActivityTab({
               return <BreakActivity data={presenterState.data} />;
             case "thank-you":
               return <ThankYouActivity data={presenterState.data} />;
+            case "markdown":
+              return <MarkdownActivity data={presenterState.data} />;
+            case "iframe":
+              return <IframeActivity data={presenterState.data} />;
             case "results":
               return <ResultsActivity data={presenterState.data} />;
             default: {

@@ -14,6 +14,8 @@ import { TimerForm } from "../activity-forms/timer-form";
 import { MultipleChoiceForm } from "../activity-forms/multiple-choice-form";
 import { FreeResponseForm } from "../activity-forms/free-response-form";
 import { RankingForm } from "../activity-forms/ranking-form";
+import { MarkdownForm } from "../activity-forms/markdown-form";
+import { IframeForm } from "../activity-forms/iframe-form";
 
 interface ActivityListItemProps {
   activity: Activity;
@@ -64,6 +66,21 @@ export function ActivityListItem({ activity, index, onUpdate, onDelete, onStart 
   const [rankingItems, setRankingItems] = useState(
     activity.data.type === "ranking" ? activity.data.items : ["", ""]
   );
+  const [markdownTitle, setMarkdownTitle] = useState(
+    activity.data.type === "markdown" ? activity.data.title ?? "" : ""
+  );
+  const [markdownContent, setMarkdownContent] = useState(
+    activity.data.type === "markdown" ? activity.data.content : ""
+  );
+  const [iframeTitle, setIframeTitle] = useState(
+    activity.data.type === "iframe" ? activity.data.title : ""
+  );
+  const [iframeUrl, setIframeUrl] = useState(
+    activity.data.type === "iframe" ? activity.data.url : ""
+  );
+  const [iframeDescription, setIframeDescription] = useState(
+    activity.data.type === "iframe" ? activity.data.description ?? "" : ""
+  );
 
   const handleSave = async () => {
     let updatedData = activity.data;
@@ -112,6 +129,23 @@ export function ActivityListItem({ activity, index, onUpdate, onDelete, onStart 
           items: validItems,
         };
         break;
+      case "markdown":
+        if (!markdownContent.trim()) return;
+        updatedData = {
+          type: "markdown",
+          title: markdownTitle.trim() || undefined,
+          content: markdownContent,
+        };
+        break;
+      case "iframe":
+        if (!iframeTitle.trim() || !iframeUrl.trim()) return;
+        updatedData = {
+          type: "iframe",
+          title: iframeTitle,
+          url: iframeUrl,
+          description: iframeDescription.trim() || undefined,
+        };
+        break;
     }
 
     await onUpdate(activity.id, {
@@ -131,6 +165,15 @@ export function ActivityListItem({ activity, index, onUpdate, onDelete, onStart 
         return activity.data.maxLength ? `Max ${activity.data.maxLength} chars` : "";
       case "ranking":
         return `${(activity.data as { items: string[] }).items?.length ?? 0} items`;
+      case "markdown":
+        return (activity.data as { title?: string }).title ?? "Content";
+      case "iframe":
+        try {
+          const url = (activity.data as { url: string }).url;
+          return url ? new URL(url).hostname : "";
+        } catch {
+          return "Invalid URL";
+        }
       default:
         return "";
     }
@@ -185,6 +228,26 @@ export function ActivityListItem({ activity, index, onUpdate, onDelete, onStart 
             rankingItems={rankingItems}
             onQuestionChange={setRankingQuestion}
             onItemsChange={setRankingItems}
+          />
+        );
+      case "markdown":
+        return (
+          <MarkdownForm
+            markdownTitle={markdownTitle}
+            markdownContent={markdownContent}
+            onTitleChange={setMarkdownTitle}
+            onContentChange={setMarkdownContent}
+          />
+        );
+      case "iframe":
+        return (
+          <IframeForm
+            iframeTitle={iframeTitle}
+            iframeUrl={iframeUrl}
+            iframeDescription={iframeDescription}
+            onTitleChange={setIframeTitle}
+            onUrlChange={setIframeUrl}
+            onDescriptionChange={setIframeDescription}
           />
         );
       default:

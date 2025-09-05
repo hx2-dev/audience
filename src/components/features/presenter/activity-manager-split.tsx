@@ -14,6 +14,8 @@ import { TimerForm } from "./activity-forms/timer-form";
 import { MultipleChoiceForm } from "./activity-forms/multiple-choice-form";
 import { FreeResponseForm } from "./activity-forms/free-response-form";
 import { RankingForm } from "./activity-forms/ranking-form";
+import { MarkdownForm } from "./activity-forms/markdown-form";
+import { IframeForm } from "./activity-forms/iframe-form";
 
 interface ActivityManagerProps {
   eventId: number;
@@ -51,6 +53,11 @@ export function ActivityManagerSplit({
   const [frMaxLength, setFrMaxLength] = useState<number | undefined>(undefined);
   const [rankingQuestion, setRankingQuestion] = useState("");
   const [rankingItems, setRankingItems] = useState(["", ""]);
+  const [markdownTitle, setMarkdownTitle] = useState("");
+  const [markdownContent, setMarkdownContent] = useState("");
+  const [iframeTitle, setIframeTitle] = useState("");
+  const [iframeUrl, setIframeUrl] = useState("");
+  const [iframeDescription, setIframeDescription] = useState("");
 
   const resetForm = () => {
     setNewActivityName("");
@@ -67,6 +74,11 @@ export function ActivityManagerSplit({
     setFrMaxLength(undefined);
     setRankingQuestion("");
     setRankingItems(["", ""]);
+    setMarkdownTitle("");
+    setMarkdownContent("");
+    setIframeTitle("");
+    setIframeUrl("");
+    setIframeDescription("");
   };
 
   const handleCreateActivity = async () => {
@@ -116,6 +128,23 @@ export function ActivityManagerSplit({
           type: "ranking",
           question: rankingQuestion,
           items: validItems,
+        };
+        break;
+      case "markdown":
+        if (!markdownContent.trim()) return;
+        activityData = {
+          type: "markdown",
+          title: markdownTitle.trim() || undefined,
+          content: markdownContent,
+        };
+        break;
+      case "iframe":
+        if (!iframeTitle.trim() || !iframeUrl.trim()) return;
+        activityData = {
+          type: "iframe",
+          title: iframeTitle,
+          url: iframeUrl,
+          description: iframeDescription.trim() || undefined,
         };
         break;
       default:
@@ -186,6 +215,26 @@ export function ActivityManagerSplit({
             onItemsChange={setRankingItems}
           />
         );
+      case "markdown":
+        return (
+          <MarkdownForm
+            markdownTitle={markdownTitle}
+            markdownContent={markdownContent}
+            onTitleChange={setMarkdownTitle}
+            onContentChange={setMarkdownContent}
+          />
+        );
+      case "iframe":
+        return (
+          <IframeForm
+            iframeTitle={iframeTitle}
+            iframeUrl={iframeUrl}
+            iframeDescription={iframeDescription}
+            onTitleChange={setIframeTitle}
+            onUrlChange={setIframeUrl}
+            onDescriptionChange={setIframeDescription}
+          />
+        );
       default:
         return null;
     }
@@ -227,6 +276,8 @@ export function ActivityManagerSplit({
                     <option value="multiple-choice">Multiple Choice</option>
                     <option value="free-response">Free Response</option>
                     <option value="ranking">Ranking</option>
+                    <option value="markdown">Markdown Content</option>
+                    <option value="iframe">Iframe/Web Content</option>
                     <option value="break">Break</option>
                     <option value="thank-you">Thank You</option>
                   </select>
@@ -234,7 +285,7 @@ export function ActivityManagerSplit({
               </div>
 
               {/* Activity-specific configuration using form components */}
-              {["welcome", "timer", "multiple-choice", "free-response", "ranking"].includes(newActivityType) && renderActivityForm()}
+              {["welcome", "timer", "multiple-choice", "free-response", "ranking", "markdown", "iframe"].includes(newActivityType) && renderActivityForm()}
 
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsCreating(false)}>
