@@ -2,7 +2,7 @@ import "server-only";
 import "reflect-metadata";
 
 import { redirect } from "next/navigation";
-import { auth } from "~/core/generic/auth";
+import { auth, createSigninUrl } from "~/core/generic/auth";
 import { AudienceQuestionsPageClient } from "./audience-questions-client";
 import { container } from "tsyringe";
 import { EventService } from "~/core/features/events/service";
@@ -44,12 +44,11 @@ export default async function AudienceQuestionsPage({
   params: Promise<{ shortId: string }>;
 }) {
   const session = await auth();
+  const { shortId } = await params;
 
   if (!session) {
-    redirect("/api/auth/signin");
+    redirect(createSigninUrl(`/audience/${shortId}/questions`));
   }
-
-  const shortId = (await params).shortId;
 
   if (!shortId) {
     return (

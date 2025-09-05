@@ -2,7 +2,7 @@ import "server-only";
 import "reflect-metadata";
 
 import { redirect } from "next/navigation";
-import { auth } from "~/core/generic/auth";
+import { auth, createSigninUrl } from "~/core/generic/auth";
 import { container } from "tsyringe";
 import { EventService } from "~/core/features/events/service";
 import * as E from "fp-ts/lib/Either";
@@ -43,12 +43,11 @@ export default async function AudiencePage({
   params: Promise<{ shortId: string }>;
 }) {
   const session = await auth();
+  const { shortId } = await params;
 
   if (!session) {
-    redirect("/api/auth/signin");
+    redirect(createSigninUrl(`/audience/${shortId}`));
   }
-
-  const shortId = (await params).shortId;
 
   if (!shortId) {
     return (

@@ -1,6 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
-import { auth } from "~/core/generic/auth";
+import { auth, createSigninUrl } from "~/core/generic/auth";
 import { PresenterActivitiesPageClient } from "./presenter-activities-client";
 
 export default async function PresenterActivitiesPage({
@@ -9,12 +9,13 @@ export default async function PresenterActivitiesPage({
   params: Promise<{ eventId: string }>;
 }) {
   const session = await auth();
+  const { eventId: eventIdParam } = await params;
 
   if (!session) {
-    redirect("/api/auth/signin");
+    redirect(createSigninUrl(`/presenter/${eventIdParam}/activities`));
   }
 
-  const eventId = parseInt((await params).eventId);
+  const eventId = parseInt(eventIdParam);
 
   if (!eventId || isNaN(eventId)) {
     return (
