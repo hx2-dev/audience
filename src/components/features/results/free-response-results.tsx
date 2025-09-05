@@ -85,7 +85,7 @@ export function FreeResponseResults({
             <p className="text-sm text-gray-600 sm:text-base dark:text-gray-300">
               Thank you for your response!
             </p>
-            <div className="mt-4 rounded-lg border bg-white p-3 text-left sm:p-4 dark:bg-gray-800">
+            <div className="mt-4 rounded-lg border bg-white p-3 text-left sm:p-4 dark:bg-slate-800">
               <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Your response:
               </p>
@@ -113,7 +113,7 @@ export function FreeResponseResults({
             return (
               <div
                 key={index}
-                className="rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4 dark:border-gray-700 dark:bg-gray-800"
+                className="rounded-lg border border-gray-200 bg-slate-50 p-3 sm:p-4 dark:border-gray-700 dark:bg-slate-800"
               >
                 <div className="flex items-start justify-between gap-3">
                   <p

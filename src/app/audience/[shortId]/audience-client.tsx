@@ -9,7 +9,6 @@ import type { Session } from "next-auth";
 import { useMultiSSEQuery } from "~/components/hooks/use-sse-query";
 import { ActivityTab } from "~/components/features/audience/activity-tab";
 import { QuestionsTab } from "~/components/features/audience/questions-tab";
-import { AudienceHeader } from "~/components/features/audience/audience-header";
 import type { Event } from "~/core/features/events/types";
 
 interface AudiencePageClientProps {
@@ -38,7 +37,6 @@ export function AudiencePageClient({
   const combinedDataQuery = api.presenter.getStateWithUserResponse.useQuery(
     {
       eventId: event?.id ?? "",
-      userId: session?.user?.id,
     },
     { enabled: !!event?.id },
   );
@@ -57,11 +55,21 @@ export function AudiencePageClient({
   };
 
   // SSE connection with automatic query integration
-  const { isConnected, error, usingPolling } = useMultiSSEQuery([
-    { queryResult: { refetch: enhancedCombinedRefetch }, eventType: "presenter-state" },
-    { queryResult: questionsQuery, eventType: "questions" },
-    { queryResult: { refetch: enhancedCombinedRefetch }, eventType: "activity-responses" },
-  ], shortId, !!shortId);
+  const { isConnected, error } = useMultiSSEQuery(
+    [
+      {
+        queryResult: { refetch: enhancedCombinedRefetch },
+        eventType: "presenter-state",
+      },
+      { queryResult: questionsQuery, eventType: "questions" },
+      {
+        queryResult: { refetch: enhancedCombinedRefetch },
+        eventType: "activity-responses",
+      },
+    ],
+    shortId,
+    !!shortId,
+  );
 
   // Extract data for easier access
   const combinedData = combinedDataQuery.data;
@@ -70,7 +78,7 @@ export function AudiencePageClient({
 
   if (error && !isConnected) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex items-center justify-center py-20">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-red-600 dark:text-red-400">
@@ -86,26 +94,24 @@ export function AudiencePageClient({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="mx-auto max-w-4xl p-4 sm:p-6">
-        <AudienceHeader
-          event={event}
-          shortId={shortId}
-          session={session}
-          isConnected={isConnected}
-          usingPolling={usingPolling}
-        />
-
+    <div>
+      <div className="mx-auto max-w-4xl">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
           className="space-y-4"
         >
-          <TabsList className="flex flex-wrap gap-1 w-full h-auto p-1">
-            <TabsTrigger value="activity" className="flex items-center gap-2 flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
+          <TabsList className="flex h-auto w-full flex-wrap gap-1 p-1">
+            <TabsTrigger
+              value="activity"
+              className="flex min-w-[120px] flex-grow items-center gap-2 sm:flex-1 sm:basis-0"
+            >
               Activity
             </TabsTrigger>
-            <TabsTrigger value="questions" className="flex items-center gap-2 flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
+            <TabsTrigger
+              value="questions"
+              className="flex min-w-[120px] flex-grow items-center gap-2 sm:flex-1 sm:basis-0"
+            >
               <MessageSquare className="h-4 w-4" />
               Questions {questions.length > 0 && `(${questions.length})`}
             </TabsTrigger>
@@ -120,7 +126,7 @@ export function AudiencePageClient({
                 refetchData={combinedDataQuery.refetch}
               />
             ) : (
-              <div className="text-center py-8">
+              <div className="py-8 text-center">
                 <p className="text-gray-500 dark:text-gray-400">
                   Waiting for presenter to start an activity...
                 </p>

@@ -7,6 +7,9 @@ import { z } from "zod";
 import { EventService } from "~/core/features/events/service";
 import * as E from "fp-ts/lib/Either";
 import { ForbiddenError, NotFoundError } from "~/core/common/error";
+import { Card, CardContent } from "~/components/ui/card";
+import { PresenterEventProvider } from "~/components/providers/presenter-event-provider";
+import { PresenterLayoutHeader } from "~/components/features/presenter/presenter-layout-header";
 
 export default async function PresenterLayout({
   children,
@@ -29,13 +32,15 @@ export default async function PresenterLayout({
   const uuidResult = z.uuid().safeParse(eventId);
   if (!uuidResult.success) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-xl font-semibold text-red-600">
-            Invalid Event ID
-          </h1>
-          <p className="text-gray-600">The event ID provided is not valid.</p>
-        </div>
+      <div className="flex items-center justify-center py-20">
+        <Card className="mx-4 w-full max-w-md backdrop-blur-sm bg-background/80">
+          <CardContent className="pt-6 text-center">
+            <h1 className="font-semibold text-destructive">
+              Invalid Event ID
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">The event ID provided is not valid.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -50,51 +55,66 @@ export default async function PresenterLayout({
   if (E.isLeft(accessResult)) {
     if (accessResult.left instanceof ForbiddenError) {
       return (
-        <div className="flex min-h-screen items-center justify-center">
-          <div className="text-center">
-            <h1 className="mb-2 text-2xl font-semibold text-red-600">
-              Access Denied
-            </h1>
-            <p className="mb-4 text-gray-600">
-              You don&apos;t have permission to access the presenter controls
-              for this event.
-            </p>
-            <p className="text-sm text-gray-500">
-              Only the event creator can access these controls.
-            </p>
-          </div>
+        <div className="flex items-center justify-center py-20">
+          <Card className="mx-4 w-full max-w-md backdrop-blur-sm bg-background/80">
+            <CardContent className="pt-6 text-center">
+              <h1 className="text-xl font-semibold text-destructive">
+                Access Denied
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                You don&apos;t have permission to access the presenter controls
+                for this event.
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Only the event creator can access these controls.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       );
     }
 
     if (accessResult.left instanceof NotFoundError) {
       return (
-        <div className="flex min-h-screen items-center justify-center">
-          <div className="text-center">
-            <h1 className="mb-2 text-2xl font-semibold text-red-600">
-              Event Not Found
-            </h1>
-            <p className="text-gray-600">
-              The event you&apos;re looking for doesn&apos;t exist.
-            </p>
-          </div>
+        <div className="flex items-center justify-center py-20">
+          <Card className="mx-4 w-full max-w-md backdrop-blur-sm bg-background/80">
+            <CardContent className="pt-6 text-center">
+              <h1 className="text-xl font-semibold text-destructive">
+                Event Not Found
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                The event you&apos;re looking for doesn&apos;t exist.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       );
     }
 
     // Other errors
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="mb-2 text-2xl font-semibold text-red-600">Error</h1>
-          <p className="text-gray-600">
-            An error occurred while accessing this event.
-          </p>
-        </div>
+      <div className="flex items-center justify-center py-20">
+        <Card className="mx-4 w-full max-w-md backdrop-blur-sm bg-background/80">
+          <CardContent className="pt-6 text-center">
+            <h1 className="text-xl font-semibold text-destructive">Error</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              An error occurred while accessing this event.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // User has access, render children
-  return <>{children}</>;
+  // User has access, provide event data to children
+  const event = accessResult.right;
+  
+  return (
+    <PresenterEventProvider event={event} eventId={eventId} session={session}>
+      <div className="mx-auto max-w-7xl p-4 sm:p-6">
+        <PresenterLayoutHeader />
+        {children}
+      </div>
+    </PresenterEventProvider>
+  );
 }

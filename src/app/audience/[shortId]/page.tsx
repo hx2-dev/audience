@@ -2,7 +2,6 @@ import "server-only";
 import "reflect-metadata";
 
 import { redirect } from "next/navigation";
-import { auth, createSigninUrl } from "~/core/generic/auth";
 import { container } from "tsyringe";
 import { EventService } from "~/core/features/events/service";
 import * as E from "fp-ts/lib/Either";
@@ -42,46 +41,8 @@ export default async function AudiencePage({
 }: {
   params: Promise<{ shortId: string }>;
 }) {
-  const session = await auth();
   const { shortId } = await params;
-
-  if (!session) {
-    redirect(createSigninUrl(`/audience/${shortId}`));
-  }
-
-  if (!shortId) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-xl font-semibold text-red-600">
-            Missing Event ID
-          </h1>
-          <p className="text-gray-600">No event ID was provided.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Fetch event data server-side
-  const eventService = container.resolve(EventService);
-  const eventResult = await eventService.getByShortId(shortId)();
-
-  if (E.isLeft(eventResult)) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-xl font-semibold text-red-600">
-            Event Not Found
-          </h1>
-          <p className="text-gray-600">
-            The event with ID &quot;{shortId.toUpperCase()}&quot; could not be
-            found.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  
   // Redirect to the activity page by default
   redirect(`/audience/${shortId}/activity`);
 }

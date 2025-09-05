@@ -51,18 +51,17 @@ export const presenterRouter = createTRPCRouter({
       )(result);
     }),
 
-  getStateWithUserResponse: publicProcedure
+  getStateWithUserResponse: protectedProcedure
     .input(
       z.object({
         eventId: z.uuid(),
-        userId: z.string().optional(),
       }),
     )
     .query<{
       presenterState: PresenterState | null;
       userResponse: ActivityResponse | null;
       allResponses: ActivityResponse[];
-    }>(async ({ input }) => {
+    }>(async ({ ctx, input }) => {
       const service = container.resolve<PresenterService>(
         PresenterServiceSymbol,
       );
@@ -84,7 +83,6 @@ export const presenterRouter = createTRPCRouter({
 
       let userResponse = null;
       if (
-        input.userId &&
         presenterState.data?.type &&
         "activityId" in presenterState.data &&
         ["multiple-choice", "free-response", "ranking"].includes(
@@ -99,7 +97,7 @@ export const presenterRouter = createTRPCRouter({
         const responseService = container.resolve(ActivityResponseService);
 
         const responseResult = await responseService.getUserResponse(
-          input.userId,
+          ctx.session.user.id,
           presenterState.data.activityId,
         )();
         if (responseResult._tag === "Right") {

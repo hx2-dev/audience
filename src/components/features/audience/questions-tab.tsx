@@ -8,6 +8,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Send } from "lucide-react";
 import { api } from "~/trpc/react";
 import type { Session } from "next-auth";
+import { useSession } from "next-auth/react";
 
 interface Question {
   id: number;
@@ -28,10 +29,10 @@ interface QuestionsTabProps {
 
 export function QuestionsTab({
   eventId,
-  session,
   questions,
   refetchQuestions,
 }: QuestionsTabProps) {
+  const { data: session } = useSession();
   const [questionText, setQuestionText] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,8 +40,7 @@ export function QuestionsTab({
   const submitQuestionMutation = api.questions.submit.useMutation();
 
   const handleSubmitQuestion = async () => {
-    if (!questionText.trim() || !eventId || isSubmitting || !session?.user)
-      return;
+    if (!questionText.trim() || !eventId || isSubmitting) return;
 
     setIsSubmitting(true);
     try {

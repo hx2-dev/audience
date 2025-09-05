@@ -50,7 +50,6 @@ export function MultipleChoiceActivity({ data }: MultipleChoiceActivityProps) {
   // Note: SSE response updates are handled at the parent level via refetchCombinedData()
   // The context automatically provides updated allResponses when the parent refetches
 
-
   const handleOptionChange = (option: string, checked: boolean) => {
     if (data.allowMultiple) {
       setSelectedOptions((prev) =>
@@ -102,51 +101,51 @@ export function MultipleChoiceActivity({ data }: MultipleChoiceActivityProps) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-        <div className="text-base font-medium break-words sm:text-lg">
-          {data.question}
-        </div>
+      <div className="text-base font-medium break-words sm:text-lg">
+        {data.question}
+      </div>
 
-        <div className="space-y-3">
-          {data.options.map((option, index) => (
-            <div key={index} className="flex items-start space-x-3">
-              <Checkbox
-                id={`option-${index}`}
-                checked={selectedOptions.includes(option)}
-                onCheckedChange={(checked) =>
-                  handleOptionChange(option, checked === true)
-                }
-                className="mt-1 shrink-0"
-              />
-              <label
-                htmlFor={`option-${index}`}
-                className="flex min-h-[44px] flex-1 cursor-pointer items-center rounded-lg border border-gray-200 p-3 text-sm break-words transition-colors hover:bg-gray-50 sm:p-4 sm:text-base dark:border-gray-700 dark:hover:bg-gray-800"
-              >
-                {option}
-              </label>
-            </div>
-          ))}
-        </div>
-
-        {data.allowMultiple && (
-          <p className="text-sm text-gray-600 italic dark:text-gray-400">
-            You can select multiple options
-          </p>
-        )}
-
-        {!data.activityId ? (
-          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-            This activity is not accepting responses yet.
+      <div className="space-y-3">
+        {data.options.map((option, index) => (
+          <div key={index} className="flex items-start space-x-3">
+            <Checkbox
+              id={`option-${index}`}
+              checked={selectedOptions.includes(option)}
+              onCheckedChange={(checked) =>
+                handleOptionChange(option, checked === true)
+              }
+              className="mt-1 shrink-0"
+            />
+            <label
+              htmlFor={`option-${index}`}
+              className="flex min-h-[44px] flex-1 cursor-pointer items-center rounded-lg border border-gray-200 p-3 text-sm break-words transition-colors hover:bg-slate-50 sm:p-4 sm:text-base dark:border-gray-700 dark:hover:bg-slate-800"
+            >
+              {option}
+            </label>
           </div>
-        ) : (
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="w-full"
-            size="lg"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Response"}
-          </Button>
-        )}
+        ))}
+      </div>
+
+      {data.allowMultiple && (
+        <p className="text-sm text-gray-600 italic dark:text-gray-400">
+          You can select multiple options
+        </p>
+      )}
+
+      {!data.activityId ? (
+        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+          This activity is not accepting responses yet.
+        </div>
+      ) : (
+        <Button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className="w-full"
+          size="lg"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Response"}
+        </Button>
+      )}
     </div>
   );
 }

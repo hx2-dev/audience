@@ -207,7 +207,7 @@ export function ResultsActivity({ data }: ResultsActivityProps) {
                         {count} ({percentage}%)
                       </span>
                     </div>
-                    <div className="h-3 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                    <div className="h-3 w-full rounded-full bg-slate-200 dark:bg-slate-700">
                       <div
                         className="h-3 rounded-full bg-blue-500 dark:bg-blue-400"
                         style={{ width: `${percentage}%` }}
@@ -224,7 +224,7 @@ export function ResultsActivity({ data }: ResultsActivityProps) {
               {aggregatedResults.sortedItems.map((item, index) => (
                 <div
                   key={item.item}
-                  className="flex items-center rounded-lg bg-gray-50 p-3 dark:bg-gray-800"
+                  className="flex items-center rounded-lg bg-slate-50 p-3 dark:bg-slate-800"
                 >
                   <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white dark:bg-blue-600">
                     {index + 1}

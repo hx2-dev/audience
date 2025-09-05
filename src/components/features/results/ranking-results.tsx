@@ -94,7 +94,7 @@ export function RankingResults({
               {userRanking.map((item, index) => (
                 <div
                   key={item}
-                  className="flex items-center rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
+                  className="flex items-center rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-slate-800"
                 >
                   <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-800 dark:bg-green-900/30 dark:text-green-300">
                     {index + 1}
@@ -123,7 +123,7 @@ export function RankingResults({
             return (
               <div
                 key={item.item}
-                className="rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4 dark:border-gray-700 dark:bg-gray-800"
+                className="rounded-lg border border-gray-200 bg-slate-50 p-3 sm:p-4 dark:border-gray-700 dark:bg-slate-800"
               >
                 <div className="flex items-center gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">

@@ -17,9 +17,9 @@ export function RankingActivity({ data }: RankingActivityProps) {
   const [rankedItems, setRankedItems] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const submitResponseMutation = api.responses.submit.useMutation();
-  
+
   // Get pre-fetched activity data from context
   const { userResponse, allResponses, refetchData } = useActivityData();
 
@@ -122,7 +122,7 @@ export function RankingActivity({ data }: RankingActivityProps) {
           {rankedItems.map((item, index) => (
             <div
               key={item}
-              className="flex items-center rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
+              className="flex items-center rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-slate-800"
             >
               <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-800 dark:bg-green-900/30 dark:text-green-300">
                 {index + 1}
@@ -141,108 +141,103 @@ export function RankingActivity({ data }: RankingActivityProps) {
         {data.question}
       </div>
 
-        {rankedItems.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-base font-medium">Your Ranking:</h3>
-            {rankedItems.map((item, index) => (
-              <div
-                key={item}
-                className="flex items-center rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-700 dark:bg-blue-900/20"
-              >
-                <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white dark:bg-blue-600">
-                  {index + 1}
-                </span>
-                <span className="flex-1 text-sm break-words sm:text-base">
-                  {item}
-                </span>
-                <div className="flex shrink-0 space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => moveItem(index, Math.max(0, index - 1))}
-                    disabled={index === 0}
-                    className="h-8 w-8 p-0"
-                  >
-                    ↑
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      moveItem(
-                        index,
-                        Math.min(rankedItems.length - 1, index + 1),
-                      )
-                    }
-                    disabled={index === rankedItems.length - 1}
-                    className="h-8 w-8 p-0"
-                  >
-                    ↓
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleItemClick(item)}
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                  >
-                    ✕
-                  </Button>
-                </div>
+      {rankedItems.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-base font-medium">Your Ranking:</h3>
+          {rankedItems.map((item, index) => (
+            <div
+              key={item}
+              className="flex items-center rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-700 dark:bg-blue-900/20"
+            >
+              <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white dark:bg-blue-600">
+                {index + 1}
+              </span>
+              <span className="flex-1 text-sm break-words sm:text-base">
+                {item}
+              </span>
+              <div className="flex shrink-0 space-x-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => moveItem(index, Math.max(0, index - 1))}
+                  disabled={index === 0}
+                  className="h-8 w-8 p-0"
+                >
+                  ↑
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    moveItem(index, Math.min(rankedItems.length - 1, index + 1))
+                  }
+                  disabled={index === rankedItems.length - 1}
+                  className="h-8 w-8 p-0"
+                >
+                  ↓
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleItemClick(item)}
+                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  ✕
+                </Button>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {unrankedItems.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-base font-medium">
+            {rankedItems.length === 0
+              ? "Click to rank items:"
+              : "Remaining items:"}
+          </h3>
+          <div className="grid grid-cols-1 gap-2">
+            {unrankedItems.map((item) => (
+              <Button
+                key={item}
+                variant="outline"
+                onClick={() => handleItemClick(item)}
+                className="h-auto min-h-[44px] justify-start p-3 text-left"
+              >
+                <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-gray-600 dark:bg-slate-700 dark:text-gray-300">
+                  ?
+                </span>
+                <span className="text-sm break-words sm:text-base">{item}</span>
+              </Button>
             ))}
           </div>
-        )}
-
-        {unrankedItems.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-base font-medium">
-              {rankedItems.length === 0
-                ? "Click to rank items:"
-                : "Remaining items:"}
-            </h3>
-            <div className="grid grid-cols-1 gap-2">
-              {unrankedItems.map((item) => (
-                <Button
-                  key={item}
-                  variant="outline"
-                  onClick={() => handleItemClick(item)}
-                  className="h-auto min-h-[44px] justify-start p-3 text-left"
-                >
-                  <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                    ?
-                  </span>
-                  <span className="text-sm break-words sm:text-base">
-                    {item}
-                  </span>
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="text-center">
-          {rankedItems.length < data.items.length && (
-            <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-              Rank {data.items.length - rankedItems.length} more item
-              {data.items.length - rankedItems.length !== 1 ? "s" : ""}
-            </p>
-          )}
-
-          {!data.activityId ? (
-            <div className="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
-              This activity is not accepting responses yet.
-            </div>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              className="min-h-[44px] w-full"
-              size="lg"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Ranking"}
-            </Button>
-          )}
         </div>
+      )}
+
+      <div className="text-center">
+        {rankedItems.length < data.items.length && (
+          <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+            Rank {data.items.length - rankedItems.length} more item
+            {data.items.length - rankedItems.length !== 1 ? "s" : ""}
+          </p>
+        )}
+
+        {!data.activityId ? (
+          <div className="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            This activity is not accepting responses yet.
+          </div>
+        ) : (
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="min-h-[44px] w-full"
+            size="lg"
+          >
+            {isSubmitting ? "Submitting..." : "Submit Ranking"}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

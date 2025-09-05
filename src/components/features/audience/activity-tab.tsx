@@ -104,7 +104,7 @@ export function ActivityTab({
                       <h2 className="mb-4 text-xl font-semibold">
                         Unknown Activity: {unknownData.type}
                       </h2>
-                      <pre className="overflow-auto rounded-lg bg-gray-100 p-4 text-sm dark:bg-gray-800">
+                      <pre className="overflow-auto rounded-lg bg-slate-100 p-4 text-sm dark:bg-slate-800">
                         {JSON.stringify(presenterState.data, null, 2)}
                       </pre>
                     </CardContent>

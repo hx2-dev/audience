@@ -11,26 +11,37 @@ interface ActivityResponseCardProps {
   onShowResults: (activity: Activity) => Promise<void>;
 }
 
-export function ActivityResponseCard({ activity, onShowResults }: ActivityResponseCardProps) {
+export function ActivityResponseCard({
+  activity,
+  onShowResults,
+}: ActivityResponseCardProps) {
   const [showDetails, setShowDetails] = useState(false);
-  const { data: responses = [], isLoading, refetch: refetchResponses } = api.responses.getByActivityId.useQuery(
-    { activityId: activity.id }
-  );
+  const {
+    data: responses = [],
+    isLoading,
+    refetch: refetchResponses,
+  } = api.responses.getByActivityId.useQuery({ activityId: activity.id });
 
   React.useEffect(() => {
     const handleResponsesUpdate = () => {
       void refetchResponses();
     };
 
-    window.addEventListener('activity-responses-updated', handleResponsesUpdate);
+    window.addEventListener(
+      "activity-responses-updated",
+      handleResponsesUpdate,
+    );
     return () => {
-      window.removeEventListener('activity-responses-updated', handleResponsesUpdate);
+      window.removeEventListener(
+        "activity-responses-updated",
+        handleResponsesUpdate,
+      );
     };
   }, [refetchResponses]);
 
   const formatResponse = (response: unknown): string => {
-    if (typeof response === 'string') return response;
-    if (typeof response === 'object' && response !== null) {
+    if (typeof response === "string") return response;
+    if (typeof response === "object" && response !== null) {
       return JSON.stringify(response, null, 2);
     }
     return String(response);
@@ -38,11 +49,16 @@ export function ActivityResponseCard({ activity, onShowResults }: ActivityRespon
 
   const getActivityTypeDisplay = (type: string): string => {
     switch (type) {
-      case 'multiple-choice': return 'Multiple Choice';
-      case 'free-response': return 'Free Response';
-      case 'ranking': return 'Ranking';
-      case 'timer': return 'Timer';
-      default: return type;
+      case "multiple-choice":
+        return "Multiple Choice";
+      case "free-response":
+        return "Free Response";
+      case "ranking":
+        return "Ranking";
+      case "timer":
+        return "Timer";
+      default:
+        return type;
     }
   };
 
@@ -59,7 +75,7 @@ export function ActivityResponseCard({ activity, onShowResults }: ActivityRespon
           responseData.forEach((option: string) => {
             optionCounts[option] = (optionCounts[option] ?? 0) + 1;
           });
-        } else if (typeof responseData === 'string') {
+        } else if (typeof responseData === "string") {
           optionCounts[responseData] = (optionCounts[responseData] ?? 0) + 1;
         }
       });
@@ -71,15 +87,15 @@ export function ActivityResponseCard({ activity, onShowResults }: ActivityRespon
         percentages: Object.fromEntries(
           Object.entries(optionCounts).map(([option, count]) => [
             option,
-            Math.round((count / responses.length) * 100)
-          ])
-        )
+            Math.round((count / responses.length) * 100),
+          ]),
+        ),
       };
     }
 
     if (activity.type === "ranking") {
       const positionScores: Record<string, number> = {};
-      
+
       responses.forEach((response) => {
         const ranking = response.response as string[];
         ranking.forEach((item, position) => {
@@ -93,19 +109,24 @@ export function ActivityResponseCard({ activity, onShowResults }: ActivityRespon
         .map(([item, score]) => ({
           item,
           score,
-          averagePosition: (responses.length * (activity.data as { items: string[] }).items.length - score) / responses.length + 1
+          averagePosition:
+            (responses.length *
+              (activity.data as { items: string[] }).items.length -
+              score) /
+              responses.length +
+            1,
         }));
 
       return {
         type: "ranking" as const,
         sortedItems,
-        totalResponses: responses.length
+        totalResponses: responses.length,
       };
     }
 
     return {
       type: "free-response" as const,
-      totalResponses: responses.length
+      totalResponses: responses.length,
     };
   }, [responses, activity]);
 
@@ -125,16 +146,19 @@ export function ActivityResponseCard({ activity, onShowResults }: ActivityRespon
           </div>
         </div>
         <div className="ml-4">
-          {responses.length > 0 && ["multiple-choice", "free-response", "ranking"].includes(activity.type) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onShowResults(activity)}
-              className="text-xs"
-            >
-              Show Results
-            </Button>
-          )}
+          {responses.length > 0 &&
+            ["multiple-choice", "free-response", "ranking"].includes(
+              activity.type,
+            ) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onShowResults(activity)}
+                className="text-xs"
+              >
+                Show Results
+              </Button>
+            )}
         </div>
       </div>
 
@@ -153,7 +177,8 @@ export function ActivityResponseCard({ activity, onShowResults }: ActivityRespon
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Results Overview ({aggregatedResults.totalResponses} responses)
+                  Results Overview ({aggregatedResults.totalResponses}{" "}
+                  responses)
                 </h4>
                 <Button
                   variant="ghost"
@@ -168,49 +193,66 @@ export function ActivityResponseCard({ activity, onShowResults }: ActivityRespon
               {/* Multiple Choice Results */}
               {aggregatedResults.type === "multiple-choice" && (
                 <div className="space-y-2">
-                  {(activity.data as { options: string[] }).options.map((option: string) => {
-                    const count = aggregatedResults.optionCounts[option] ?? 0;
-                    const percentage = aggregatedResults.percentages[option] ?? 0;
-                    
-                    return (
-                      <div key={option} className="space-y-1">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="truncate pr-2">{option}</span>
-                          <span className="font-medium shrink-0">
-                            {count} ({percentage}%)
-                          </span>
+                  {(activity.data as { options: string[] }).options.map(
+                    (option: string) => {
+                      const count = aggregatedResults.optionCounts[option] ?? 0;
+                      const percentage =
+                        aggregatedResults.percentages[option] ?? 0;
+
+                      return (
+                        <div key={option} className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="truncate pr-2">{option}</span>
+                            <span className="shrink-0 font-medium">
+                              {count} ({percentage}%)
+                            </span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+                            <div
+                              className="h-2 rounded-full bg-blue-500 dark:bg-blue-400"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div 
-                            className="h-2 rounded-full bg-blue-500 dark:bg-blue-400"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    },
+                  )}
                 </div>
               )}
 
               {/* Ranking Results */}
               {aggregatedResults.type === "ranking" && (
                 <div className="space-y-2">
-                  {aggregatedResults.sortedItems.map((item: { item: string; score: number; averagePosition: number }, index: number) => (
-                    <div key={item.item} className="flex items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                      <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 shrink-0">
-                        {index + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium truncate block">{item.item}</span>
-                        <div className="text-xs text-gray-500">
-                          Avg: {item.averagePosition.toFixed(1)}
+                  {aggregatedResults.sortedItems.map(
+                    (
+                      item: {
+                        item: string;
+                        score: number;
+                        averagePosition: number;
+                      },
+                      index: number,
+                    ) => (
+                      <div
+                        key={item.item}
+                        className="flex items-center rounded bg-slate-50 p-2 dark:bg-slate-800"
+                      >
+                        <span className="mr-3 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white">
+                          {index + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">
+                            {item.item}
+                          </span>
+                          <div className="text-xs text-gray-500">
+                            Avg: {item.averagePosition.toFixed(1)}
+                          </div>
+                        </div>
+                        <div className="text-xs font-medium">
+                          {item.score} pts
                         </div>
                       </div>
-                      <div className="text-xs font-medium">
-                        {item.score} pts
-                      </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               )}
 
@@ -233,11 +275,11 @@ export function ActivityResponseCard({ activity, onShowResults }: ActivityRespon
                 {responses.map((response) => (
                   <div
                     key={response.id}
-                    className="rounded-md bg-gray-50 p-3 text-sm dark:bg-gray-800"
+                    className="rounded-md bg-slate-50 p-3 text-sm dark:bg-slate-800"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <pre className="whitespace-pre-wrap font-mono text-xs">
+                        <pre className="font-mono text-xs whitespace-pre-wrap">
                           {formatResponse(response.response)}
                         </pre>
                       </div>

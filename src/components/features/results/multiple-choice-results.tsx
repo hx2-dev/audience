@@ -116,7 +116,7 @@ export function MultipleChoiceResults({
                     {count} ({percentage}%)
                   </span>
                 </div>
-                <div className="h-3 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                <div className="h-3 w-full rounded-full bg-slate-200 dark:bg-slate-700">
                   <div
                     className={`h-3 rounded-full ${
                       isSelected
