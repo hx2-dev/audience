@@ -71,6 +71,13 @@ export class EventService {
     );
   }
 
+  checkPresenterAccess(eventId: number, userId: string): TaskEither<Error, Event> {
+    return pipe(
+      this.getById(eventId),
+      TE.flatMap(this.checkEventAuthorization(userId)),
+    );
+  }
+
   private checkEventAuthorization(userId: string) {
     return TE.fromPredicate(
       (event: Event) => event.creatorId === userId,
