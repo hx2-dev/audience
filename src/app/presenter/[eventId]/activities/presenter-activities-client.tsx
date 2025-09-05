@@ -18,7 +18,7 @@ import type {
 import { PresenterTabsNavigation } from "~/components/features/presenter/presenter-tabs-navigation";
 
 interface PresenterActivitiesPageClientProps {
-  eventId: number;
+  eventId: string;
   session: Session;
 }
 
@@ -29,26 +29,33 @@ export function PresenterActivitiesPageClient({
   // Fetch event data
   const { data: event, isLoading: eventLoading } = api.event.getById.useQuery(
     { id: eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Fetch activities for this event
   const activitiesQuery = api.activities.getByEventId.useQuery(
     { eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Enhanced refetch functions for custom event dispatching
   const enhancedQuestionsRefresh = () => {
     // Dispatch event for navigation to pick up
-    window.dispatchEvent(new CustomEvent('questions-updated'));
+    window.dispatchEvent(new CustomEvent("questions-updated"));
   };
 
   // SSE connection with automatic query integration
-  const { isConnected } = useMultiSSEQuery([
-    { queryResult: { refetch: enhancedQuestionsRefresh }, eventType: "questions" },
-    { queryResult: activitiesQuery, eventType: "activities" },
-  ], event?.shortId, !!event?.shortId);
+  const { isConnected } = useMultiSSEQuery(
+    [
+      {
+        queryResult: { refetch: enhancedQuestionsRefresh },
+        eventType: "questions",
+      },
+      { queryResult: activitiesQuery, eventType: "activities" },
+    ],
+    event?.shortId,
+    !!event?.shortId,
+  );
 
   // Extract data for easier access
   const activities = activitiesQuery.data ?? [];

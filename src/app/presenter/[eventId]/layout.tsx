@@ -3,6 +3,7 @@ import "reflect-metadata";
 import { redirect } from "next/navigation";
 import { auth, createSigninUrl } from "~/core/generic/auth";
 import { container } from "tsyringe";
+import { z } from "zod";
 import { EventService } from "~/core/features/events/service";
 import * as E from "fp-ts/lib/Either";
 import { ForbiddenError, NotFoundError } from "~/core/common/error";
@@ -22,10 +23,11 @@ export default async function PresenterLayout({
     redirect(createSigninUrl(`/presenter/${eventIdParam}`));
   }
 
-  const eventId = parseInt(eventIdParam);
+  const eventId = eventIdParam;
 
-  // Check valid event ID
-  if (!eventId || isNaN(eventId)) {
+  // Check valid event ID (UUID format)
+  const uuidResult = z.uuid().safeParse(eventId);
+  if (!uuidResult.success) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">

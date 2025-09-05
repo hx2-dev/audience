@@ -58,7 +58,7 @@ export class PresenterQueries {
     eventId,
     connection = db,
   }: {
-    eventId: number;
+    eventId: string;
     connection?: SchemaConnection;
   }): TaskEither<Error, PresenterState> {
     return TE.tryCatch(

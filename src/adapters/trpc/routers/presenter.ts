@@ -32,7 +32,7 @@ const serviceCall = async <T>(
 
 export const presenterRouter = createTRPCRouter({
   getByEventId: publicProcedure
-    .input(z.object({ eventId: z.number().int().min(1) }))
+    .input(z.object({ eventId: z.uuid() }))
     .query<PresenterState | null>(async ({ input }) => {
       const service = container.resolve<PresenterService>(
         PresenterServiceSymbol,
@@ -54,7 +54,7 @@ export const presenterRouter = createTRPCRouter({
   getStateWithUserResponse: publicProcedure
     .input(
       z.object({
-        eventId: z.number().int().min(1),
+        eventId: z.uuid(),
         userId: z.string().optional(),
       }),
     )

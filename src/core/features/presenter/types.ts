@@ -51,7 +51,7 @@ export const thankYouActivityValidator = z.object({
 export const iframeActivityValidator = z.object({
   type: z.literal("iframe"),
   title: z.string().min(1),
-  url: z.string().url(),
+  url: z.url(),
   description: z.string().optional(),
 });
 
@@ -85,7 +85,7 @@ export type ActivityData = z.infer<typeof activityDataValidator>;
 
 // For serialization (stored in database)
 export const serializedPresenterStateValidator = z.object({
-  eventId: z.number().int().min(1),
+  eventId: z.uuid(),
   currentPage: z.string().min(1),
   data: z.unknown(),
 });
@@ -96,7 +96,7 @@ export type SerializedPresenterState = z.infer<
 
 // Main presenter state type
 export const presenterStateValidator = z.object({
-  eventId: z.number().int().min(1),
+  eventId: z.uuid(),
   currentPage: z.string().min(1),
   data: activityDataValidator.optional(),
 });
@@ -104,9 +104,11 @@ export const presenterStateValidator = z.object({
 export type PresenterState = z.infer<typeof presenterStateValidator>;
 
 export const updatePresenterStateValidator = z.object({
-  eventId: z.number().int().min(1),
+  eventId: z.uuid(),
   currentPage: z.string().min(1),
   data: activityDataValidator.optional(),
 });
 
-export type UpdatePresenterState = z.infer<typeof updatePresenterStateValidator>;
+export type UpdatePresenterState = z.infer<
+  typeof updatePresenterStateValidator
+>;

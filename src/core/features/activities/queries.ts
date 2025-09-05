@@ -12,7 +12,7 @@ import { NotFoundError } from "~/core/common/error";
 export class ActivityQueries {
   private rowToActivity(activity: {
     id: number;
-    eventId: number;
+    eventId: string;
     name: string;
     type: string;
     data: unknown;
@@ -76,7 +76,7 @@ export class ActivityQueries {
     eventId,
     connection = db,
   }: {
-    eventId: number;
+    eventId: string;
     connection?: SchemaConnection;
   }): TaskEither<Error, Activity[]> {
     return TE.tryCatch(

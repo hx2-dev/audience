@@ -15,7 +15,7 @@ import type { Activity } from "~/core/features/activities/types";
 import { PresenterTabsNavigation } from "~/components/features/presenter/presenter-tabs-navigation";
 
 interface PresenterResponsesPageClientProps {
-  eventId: number;
+  eventId: string;
   session: Session;
 }
 
@@ -26,32 +26,42 @@ export function PresenterResponsesPageClient({
   // Fetch event data
   const { data: event, isLoading: eventLoading } = api.event.getById.useQuery(
     { id: eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Fetch activities for this event
   const activitiesQuery = api.activities.getByEventId.useQuery(
     { eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Enhanced refetch functions for custom event dispatching
   const enhancedQuestionsRefresh = () => {
     // Dispatch event for navigation to pick up
-    window.dispatchEvent(new CustomEvent('questions-updated'));
+    window.dispatchEvent(new CustomEvent("questions-updated"));
   };
 
   const enhancedActivityResponsesRefresh = () => {
     // Dispatch event for individual activity components to pick up
-    window.dispatchEvent(new CustomEvent('activity-responses-updated'));
+    window.dispatchEvent(new CustomEvent("activity-responses-updated"));
   };
 
   // SSE connection with automatic query integration
-  const { isConnected } = useMultiSSEQuery([
-    { queryResult: { refetch: enhancedQuestionsRefresh }, eventType: "questions" },
-    { queryResult: activitiesQuery, eventType: "activities" },
-    { queryResult: { refetch: enhancedActivityResponsesRefresh }, eventType: "activity-responses" },
-  ], event?.shortId, !!event?.shortId);
+  const { isConnected } = useMultiSSEQuery(
+    [
+      {
+        queryResult: { refetch: enhancedQuestionsRefresh },
+        eventType: "questions",
+      },
+      { queryResult: activitiesQuery, eventType: "activities" },
+      {
+        queryResult: { refetch: enhancedActivityResponsesRefresh },
+        eventType: "activity-responses",
+      },
+    ],
+    event?.shortId,
+    !!event?.shortId,
+  );
 
   // Extract data for easier access
   const activities = activitiesQuery.data ?? [];
@@ -170,13 +180,14 @@ export function PresenterResponsesPageClient({
                   <div className="py-8 text-center text-gray-500 dark:text-gray-400">
                     No activities created yet.
                     <br />
-                    Create activities in the &ldquo;Manage Activities&rdquo; tab to see responses here.
+                    Create activities in the &ldquo;Manage Activities&rdquo; tab
+                    to see responses here.
                   </div>
                 ) : (
                   activities.map((activity) => (
-                    <ActivityResponseCard 
-                      key={activity.id} 
-                      activity={activity} 
+                    <ActivityResponseCard
+                      key={activity.id}
+                      activity={activity}
                       onShowResults={handleShowResults}
                     />
                   ))

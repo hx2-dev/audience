@@ -20,7 +20,7 @@ interface Question {
 }
 
 interface QuestionsTabProps {
-  eventId: number;
+  eventId: string;
   session: Session;
   questions: Question[];
   refetchQuestions: () => void;

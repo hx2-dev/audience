@@ -15,7 +15,7 @@ import type { ActivityData } from "~/core/features/presenter/types";
 import { PresenterTabsNavigation } from "~/components/features/presenter/presenter-tabs-navigation";
 
 interface PresenterControlPageClientProps {
-  eventId: number;
+  eventId: string;
   session: Session;
 }
 
@@ -26,26 +26,33 @@ export function PresenterControlPageClient({
   // Fetch event data
   const { data: event, isLoading: eventLoading } = api.event.getById.useQuery(
     { id: eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Fetch activities for this event
   const activitiesQuery = api.activities.getByEventId.useQuery(
     { eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Enhanced refetch functions for custom event dispatching
   const enhancedQuestionsRefresh = () => {
     // Dispatch event for navigation to pick up
-    window.dispatchEvent(new CustomEvent('questions-updated'));
+    window.dispatchEvent(new CustomEvent("questions-updated"));
   };
 
   // SSE connection with automatic query integration
-  const { isConnected } = useMultiSSEQuery([
-    { queryResult: { refetch: enhancedQuestionsRefresh }, eventType: "questions" },
-    { queryResult: activitiesQuery, eventType: "activities" },
-  ], event?.shortId, !!event?.shortId);
+  const { isConnected } = useMultiSSEQuery(
+    [
+      {
+        queryResult: { refetch: enhancedQuestionsRefresh },
+        eventType: "questions",
+      },
+      { queryResult: activitiesQuery, eventType: "activities" },
+    ],
+    event?.shortId,
+    !!event?.shortId,
+  );
 
   // Mutations
   const createActivityMutation = api.activities.create.useMutation();
@@ -55,7 +62,10 @@ export function PresenterControlPageClient({
     let updatedData = data;
 
     // First, create a saved activity if this is an interactive activity
-    if (data && ["multiple-choice", "free-response", "ranking"].includes(data.type)) {
+    if (
+      data &&
+      ["multiple-choice", "free-response", "ranking"].includes(data.type)
+    ) {
       const getActivityName = (activityData: ActivityData): string => {
         if (activityData.type === "multiple-choice") {
           return `Multiple Choice: ${activityData.question}`;
@@ -77,10 +87,10 @@ export function PresenterControlPageClient({
         type: data.type,
         data,
       });
-      
+
       // Add the activityId to the data
       updatedData = { ...data, activityId: createdActivity.id } as ActivityData;
-      
+
       await activitiesQuery.refetch();
     }
 

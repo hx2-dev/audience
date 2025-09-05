@@ -37,7 +37,7 @@ export function AudiencePageClient({
   // Get presenter state with user response data in one query
   const combinedDataQuery = api.presenter.getStateWithUserResponse.useQuery(
     {
-      eventId: event?.id ?? 0,
+      eventId: event?.id ?? "",
       userId: session?.user?.id,
     },
     { enabled: !!event?.id },
@@ -45,7 +45,7 @@ export function AudiencePageClient({
 
   // Get questions for this event
   const questionsQuery = api.questions.getByEventId.useQuery(
-    { eventId: event?.id ?? 0 },
+    { eventId: event?.id ?? "" },
     { enabled: !!event?.id },
   );
 
@@ -130,7 +130,7 @@ export function AudiencePageClient({
 
           <TabsContent value="questions" className="space-y-4">
             <QuestionsTab
-              eventId={event?.id ?? 0}
+              eventId={event?.id ?? ""}
               session={session}
               questions={questions}
               refetchQuestions={questionsQuery.refetch}

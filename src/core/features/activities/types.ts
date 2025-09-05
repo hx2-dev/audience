@@ -3,7 +3,7 @@ import { activityDataValidator } from "~/core/features/presenter/types";
 import { auditableSchema } from "~/core/generic/audit/auditable";
 
 export const createActivityValidator = z.object({
-  eventId: z.number().int().min(1),
+  eventId: z.uuid(),
   name: z.string().min(1),
   type: z.string().min(1),
   data: activityDataValidator,
@@ -20,8 +20,10 @@ export const activityValidator = z.object({
 
 export type Activity = z.infer<typeof activityValidator>;
 
-export const updateActivityValidator = createActivityValidator.partial().extend({
-  id: z.number().int().min(1),
-});
+export const updateActivityValidator = createActivityValidator
+  .partial()
+  .extend({
+    id: z.number().int().min(1),
+  });
 
 export type UpdateActivity = z.infer<typeof updateActivityValidator>;

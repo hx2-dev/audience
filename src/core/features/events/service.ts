@@ -14,7 +14,7 @@ export class EventService {
     private readonly eventQueries: EventQueries,
   ) {}
 
-  getById(id: number): TaskEither<Error, Event> {
+  getById(id: string): TaskEither<Error, Event> {
     return this.eventQueries.getById({ id });
   }
 
@@ -27,7 +27,7 @@ export class EventService {
   }
 
   update(
-    eventId: number,
+    eventId: string,
     updateEvent: UpdateEvent,
     userId: string,
   ): TaskEither<Error, Event> {
@@ -40,7 +40,7 @@ export class EventService {
     );
   }
 
-  generateShortId(eventId: number, userId: string): TaskEither<Error, string> {
+  generateShortId(eventId: string, userId: string): TaskEither<Error, string> {
     return TE.tryCatch(
       async () => {
         let shortId: string;
@@ -63,7 +63,7 @@ export class EventService {
     );
   }
 
-  delete(eventId: number, userId: string): TaskEither<Error, void> {
+  delete(eventId: string, userId: string): TaskEither<Error, void> {
     return pipe(
       this.getById(eventId),
       TE.flatMap(this.checkEventAuthorization(userId)),
@@ -71,7 +71,7 @@ export class EventService {
     );
   }
 
-  checkPresenterAccess(eventId: number, userId: string): TaskEither<Error, Event> {
+  checkPresenterAccess(eventId: string, userId: string): TaskEither<Error, Event> {
     return pipe(
       this.getById(eventId),
       TE.flatMap(this.checkEventAuthorization(userId)),

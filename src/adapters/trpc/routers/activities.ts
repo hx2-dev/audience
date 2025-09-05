@@ -31,7 +31,7 @@ const serviceCall = async <T>(
 
 export const activitiesRouter = createTRPCRouter({
   getByEventId: publicProcedure
-    .input(z.object({ eventId: z.number().int().min(1) }))
+    .input(z.object({ eventId: z.uuid() }))
     .query<Activity[]>(({ input }) => {
       return serviceCall((service) => service.getByEventId(input.eventId));
     }),

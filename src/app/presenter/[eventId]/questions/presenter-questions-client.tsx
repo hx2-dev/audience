@@ -116,7 +116,7 @@ function QuestionCard({ question, onAnswer, onDelete }: QuestionCardProps) {
 }
 
 interface PresenterQuestionsPageClientProps {
-  eventId: number;
+  eventId: string;
   session: Session;
 }
 
@@ -127,13 +127,13 @@ export function PresenterQuestionsPageClient({
   // Fetch event data
   const { data: event, isLoading: eventLoading } = api.event.getById.useQuery(
     { id: eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Fetch questions for this event
   const questionsQuery = api.questions.getByEventIdForPresenter.useQuery(
     { eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // SSE connection with automatic query integration

@@ -27,7 +27,7 @@ export class EventQueries {
     id,
     connection = db,
   }: {
-    id: number;
+    id: string;
     connection?: SchemaConnection;
   }): TaskEither<Error, Event> {
     return TE.tryCatch(
@@ -120,7 +120,7 @@ export class EventQueries {
     userId,
     connection = db,
   }: {
-    eventId: number;
+    eventId: string;
     shortId: string;
     userId: string;
     connection?: SchemaConnection;
@@ -154,7 +154,7 @@ export class EventQueries {
     userId,
     connection = db,
   }: {
-    eventId: number;
+    eventId: string;
     updateEvent: UpdateEvent;
     userId: string;
     connection?: SchemaConnection;
@@ -183,7 +183,7 @@ export class EventQueries {
     userId,
     connection = db,
   }: {
-    id: number;
+    id: string;
     userId: string;
     connection?: SchemaConnection;
   }): TaskEither<Error, void> {

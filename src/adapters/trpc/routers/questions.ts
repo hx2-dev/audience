@@ -28,13 +28,13 @@ const serviceCall = async <T>(
 
 export const questionsRouter = createTRPCRouter({
   getByEventId: publicProcedure
-    .input(z.object({ eventId: z.number().int().min(1) }))
+    .input(z.object({ eventId: z.uuid() }))
     .query<PublicQuestion[]>(({ input }) => {
       return serviceCall((service) => service.getByEventId(input.eventId));
     }),
 
   getByEventIdForPresenter: protectedProcedure
-    .input(z.object({ eventId: z.number().int().min(1) }))
+    .input(z.object({ eventId: z.uuid() }))
     .query<Question[]>(({ input }) => {
       return serviceCall((service) =>
         service.getByEventIdForPresenter(input.eventId),

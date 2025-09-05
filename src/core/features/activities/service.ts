@@ -35,7 +35,7 @@ export class ActivityService {
     private readonly responseQueries: ActivityResponseQueries,
   ) {}
 
-  getByEventId(eventId: number): TaskEither<Error, Activity[]> {
+  getByEventId(eventId: string): TaskEither<Error, Activity[]> {
     return this.activityQueries.getByEventId({ eventId });
   }
 
@@ -213,7 +213,7 @@ export class ActivityService {
 
   private cleanupInvalidResponses(
     activityId: number,
-    presenterState: { eventId: number },
+    presenterState: { eventId: string },
   ): TaskEither<Error, void> {
     return pipe(
       // Delete all responses for this activity when structure changes significantly
@@ -246,7 +246,7 @@ export class ActivityService {
   }
 
   private updatePresenterStateDirectly(
-    eventId: number,
+    eventId: string,
     currentPage: string,
     data: ActivityData,
   ): TaskEither<Error, void> {

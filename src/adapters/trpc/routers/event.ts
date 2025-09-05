@@ -31,7 +31,7 @@ const serviceCall = async <T>(
 
 export const eventRouter = createTRPCRouter({
   getById: publicProcedure
-    .input(z.object({ id: z.number().int().min(1) }))
+    .input(z.object({ id: z.uuid() }))
     .query<Event>(({ input }) => {
       return serviceCall((service) => service.getById(input.id));
     }),
@@ -53,7 +53,7 @@ export const eventRouter = createTRPCRouter({
   update: protectedProcedure
     .input(
       z.object({
-        id: z.number().int().min(1),
+        id: z.uuid(),
         event: updateEventValidator,
       }),
     )
@@ -64,7 +64,7 @@ export const eventRouter = createTRPCRouter({
     }),
 
   generateShortId: protectedProcedure
-    .input(z.object({ id: z.number().int().min(1) }))
+    .input(z.object({ id: z.uuid() }))
     .mutation<string>(({ ctx, input }) => {
       return serviceCall((service) =>
         service.generateShortId(input.id, ctx.session.user.id),
@@ -72,7 +72,7 @@ export const eventRouter = createTRPCRouter({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ id: z.number().int().min(1) }))
+    .input(z.object({ id: z.uuid() }))
     .mutation<void>(({ ctx, input }) => {
       return serviceCall((service) =>
         service.delete(input.id, ctx.session.user.id),

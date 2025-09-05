@@ -22,14 +22,14 @@ export class QuestionService {
     private readonly eventService: EventService,
   ) {}
 
-  getByEventId(eventId: number): TaskEither<Error, PublicQuestion[]> {
+  getByEventId(eventId: string): TaskEither<Error, PublicQuestion[]> {
     return pipe(
       this.questionQueries.getByEventId({ eventId }),
       TE.map((questions) => questions.map((q) => this.toPublicQuestion(q))),
     );
   }
 
-  getByEventIdForPresenter(eventId: number): TaskEither<Error, Question[]> {
+  getByEventIdForPresenter(eventId: string): TaskEither<Error, Question[]> {
     return this.questionQueries.getByEventId({ eventId });
   }
 

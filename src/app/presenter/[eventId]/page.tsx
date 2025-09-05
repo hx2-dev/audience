@@ -6,8 +6,7 @@ export default async function PresenterPage({
 }: {
   params: Promise<{ eventId: string }>;
 }) {
-  const { eventId: eventIdParam } = await params;
-  const eventId = parseInt(eventIdParam);
+  const { eventId } = await params;
 
   redirect(`/presenter/${eventId}/control`);
 }

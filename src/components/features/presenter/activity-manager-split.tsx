@@ -18,7 +18,7 @@ import { MarkdownForm } from "./activity-forms/markdown-form";
 import { IframeForm } from "./activity-forms/iframe-form";
 
 interface ActivityManagerProps {
-  eventId: number;
+  eventId: string;
   activities: Activity[];
   onCreateActivity: (activity: CreateActivity) => Promise<void>;
   onUpdateActivity: (activityId: number, updates: Partial<Activity>) => Promise<void>;

@@ -131,7 +131,7 @@ export function AudienceQuestionsPageClient({
 
         {/* Questions Content */}
         <QuestionsTab
-          eventId={event?.id ?? 0}
+          eventId={event?.id ?? ""}
           session={session}
           questions={questions}
           refetchQuestions={questionsQuery.refetch}

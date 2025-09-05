@@ -23,7 +23,7 @@ export class PresenterService {
     private readonly eventService: EventService,
   ) {}
 
-  getByEventId(eventId: number): TaskEither<Error, PresenterState> {
+  getByEventId(eventId: string): TaskEither<Error, PresenterState> {
     return this.presenterQueries.getByEventId({ eventId });
   }
 

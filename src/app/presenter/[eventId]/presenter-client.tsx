@@ -124,7 +124,7 @@ function QuestionCard({ question, onAnswer, onDelete }: QuestionCardProps) {
 }
 
 interface PresenterDashboardClientProps {
-  eventId: number;
+  eventId: string;
   session: Session;
 }
 
@@ -135,19 +135,19 @@ export function PresenterDashboardClient({
   // Fetch event data
   const { data: event, isLoading: eventLoading } = api.event.getById.useQuery(
     { id: eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Fetch activities for this event
   const activitiesQuery = api.activities.getByEventId.useQuery(
     { eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Fetch questions for this event
   const questionsQuery = api.questions.getByEventIdForPresenter.useQuery(
     { eventId },
-    { enabled: !isNaN(eventId) },
+    { enabled: !!eventId },
   );
 
   // Enhanced refetch for activity responses that also dispatches events
@@ -409,17 +409,29 @@ export function PresenterDashboardClient({
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="flex flex-wrap gap-1 w-full h-auto p-1">
-            <TabsTrigger value="control" className="text-sm sm:text-base flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
+          <TabsList className="flex h-auto w-full flex-wrap gap-1 p-1">
+            <TabsTrigger
+              value="control"
+              className="min-w-[120px] flex-grow text-sm sm:flex-1 sm:basis-0 sm:text-base"
+            >
               Live Control
             </TabsTrigger>
-            <TabsTrigger value="activities" className="text-sm sm:text-base flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
+            <TabsTrigger
+              value="activities"
+              className="min-w-[120px] flex-grow text-sm sm:flex-1 sm:basis-0 sm:text-base"
+            >
               Manage Activities
             </TabsTrigger>
-            <TabsTrigger value="responses" className="text-sm sm:text-base flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
+            <TabsTrigger
+              value="responses"
+              className="min-w-[120px] flex-grow text-sm sm:flex-1 sm:basis-0 sm:text-base"
+            >
               View Responses
             </TabsTrigger>
-            <TabsTrigger value="questions" className="text-sm sm:text-base flex-grow min-w-[120px] sm:flex-1 sm:basis-0">
+            <TabsTrigger
+              value="questions"
+              className="min-w-[120px] flex-grow text-sm sm:flex-1 sm:basis-0 sm:text-base"
+            >
               Q&A Questions {questions.length > 0 && `(${questions.length})`}
             </TabsTrigger>
           </TabsList>

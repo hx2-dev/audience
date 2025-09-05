@@ -1,5 +1,10 @@
 import { relations, sql } from "drizzle-orm";
-import { index, pgTableCreator, primaryKey, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  index,
+  pgTableCreator,
+  primaryKey,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { type AdapterAccount } from "next-auth/adapters";
 
 /**
@@ -9,27 +14,6 @@ import { type AdapterAccount } from "next-auth/adapters";
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
 export const createTable = pgTableCreator((name) => `hx2-audience_${name}`);
-
-export const posts = createTable(
-  "post",
-  (d) => ({
-    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-    name: d.varchar({ length: 256 }),
-    createdById: d
-      .varchar({ length: 255 })
-      .notNull()
-      .references(() => users.id),
-    createdAt: d
-      .timestamp({ withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
-  }),
-  (t) => [
-    index("created_by_idx").on(t.createdById),
-    index("name_idx").on(t.name),
-  ],
-);
 
 export const users = createTable("user", (d) => ({
   id: d
@@ -110,7 +94,11 @@ export const verificationTokens = createTable(
 export const events = createTable(
   "event",
   (d) => ({
-    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+    id: d
+      .uuid()
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     shortId: d.varchar({ length: 6 }).unique(),
     creatorId: d
       .varchar({ length: 255 })
@@ -146,7 +134,7 @@ export const presenterStates = createTable(
   "presenter_state",
   (d) => ({
     eventId: d
-      .integer()
+      .uuid()
       .primaryKey()
       .references(() => events.id),
     currentPage: d.varchar({ length: 256 }).notNull(),
@@ -163,9 +151,12 @@ export const presenterStates = createTable(
 export const activities = createTable(
   "activity",
   (d) => ({
-    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+    id: d
+      .bigint({ mode: "number" })
+      .primaryKey()
+      .generatedByDefaultAsIdentity(),
     eventId: d
-      .integer()
+      .uuid()
       .notNull()
       .references(() => events.id),
     name: d.varchar({ length: 256 }).notNull(),
@@ -196,12 +187,18 @@ export const activities = createTable(
 export const activityResponses = createTable(
   "activity_response",
   (d) => ({
-    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+    id: d
+      .bigint({ mode: "number" })
+      .primaryKey()
+      .generatedByDefaultAsIdentity(),
     activityId: d
-      .integer()
+      .bigint({ mode: "number" })
       .notNull()
       .references(() => activities.id),
-    userId: d.varchar({ length: 255 }).notNull().references(() => users.id),
+    userId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
     response: d.jsonb().notNull(),
     createdAt: d
       .timestamp({ withTimezone: true })
@@ -224,9 +221,12 @@ export const activityResponses = createTable(
 export const questions = createTable(
   "question",
   (d) => ({
-    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+    id: d
+      .bigint({ mode: "number" })
+      .primaryKey()
+      .generatedByDefaultAsIdentity(),
     eventId: d
-      .integer()
+      .uuid()
       .notNull()
       .references(() => events.id),
     question: d.text().notNull(),

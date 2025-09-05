@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createQuestionValidator = z.object({
-  eventId: z.number().int().min(1),
+  eventId: z.uuid(),
   question: z.string().min(1),
   isAnonymous: z.boolean().default(false),
 });
@@ -10,7 +10,7 @@ export type CreateQuestion = z.infer<typeof createQuestionValidator>;
 
 export const questionValidator = z.object({
   id: z.number().int().min(1),
-  eventId: z.number().int().min(1),
+  eventId: z.uuid(),
   question: z.string().min(1),
   submitterName: z.string().nullable(),
   submitterUserId: z.string().nullable(),

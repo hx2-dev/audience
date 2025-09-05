@@ -15,7 +15,7 @@ import { NotFoundError } from "~/core/common/error";
 export class QuestionQueries {
   private rowToQuestion(question: {
     id: number;
-    eventId: number;
+    eventId: string;
     question: string;
     submitterName: string | null;
     submitterUserId: string | null;
@@ -47,7 +47,7 @@ export class QuestionQueries {
     eventId,
     connection = db,
   }: {
-    eventId: number;
+    eventId: string;
     connection?: SchemaConnection;
   }): TaskEither<Error, Question[]> {
     return TE.tryCatch(

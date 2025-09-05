@@ -9,11 +9,10 @@ export default async function PresenterActivitiesPage({
   params: Promise<{ eventId: string }>;
 }) {
   const session = await auth();
-  const { eventId: eventIdParam } = await params;
-  const eventId = parseInt(eventIdParam);
+  const { eventId } = await params;
 
   if (!session) {
-    redirect(createSigninUrl(`/presenter/${eventIdParam}/activities`));
+    redirect(createSigninUrl(`/presenter/${eventId}/activities`));
   }
 
   return <PresenterActivitiesPageClient eventId={eventId} session={session} />;

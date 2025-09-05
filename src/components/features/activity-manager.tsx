@@ -6,17 +6,29 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import { Textarea } from "~/components/ui/textarea";
 import { Checkbox } from "~/components/ui/checkbox";
-import type { Activity, CreateActivity } from "~/core/features/activities/types";
+import type {
+  Activity,
+  CreateActivity,
+} from "~/core/features/activities/types";
 import type { ActivityData } from "~/core/features/presenter/types";
 
 interface ActivityManagerProps {
-  eventId: number;
+  eventId: string;
   activities: Activity[];
   onCreateActivity: (activity: CreateActivity) => Promise<void>;
-  onUpdateActivity: (activityId: number, updates: Partial<Activity>) => Promise<void>;
+  onUpdateActivity: (
+    activityId: number,
+    updates: Partial<Activity>,
+  ) => Promise<void>;
   onDeleteActivity: (activityId: number) => Promise<void>;
   onReorderActivities: (activityIds: number[]) => Promise<void>;
   onStartActivity: (activity: Activity) => Promise<void>;
@@ -33,8 +45,9 @@ export function ActivityManager({
 }: ActivityManagerProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newActivityName, setNewActivityName] = useState("");
-  const [newActivityType, setNewActivityType] = useState<ActivityData["type"]>("welcome");
-  
+  const [newActivityType, setNewActivityType] =
+    useState<ActivityData["type"]>("welcome");
+
   // Activity creation state
   const [welcomeTitle, setWelcomeTitle] = useState("");
   const [welcomeSubtitle, setWelcomeSubtitle] = useState("");
@@ -88,7 +101,7 @@ export function ActivityManager({
         };
         break;
       case "multiple-choice":
-        const validOptions = mcOptions.filter(opt => opt.trim());
+        const validOptions = mcOptions.filter((opt) => opt.trim());
         if (validOptions.length < 2) return;
         activityData = {
           type: "multiple-choice",
@@ -107,7 +120,7 @@ export function ActivityManager({
         };
         break;
       case "ranking":
-        const validItems = rankingItems.filter(item => item.trim());
+        const validItems = rankingItems.filter((item) => item.trim());
         if (validItems.length < 2 || !rankingQuestion.trim()) return;
         activityData = {
           type: "ranking",
@@ -166,13 +179,15 @@ export function ActivityManager({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Activities ({activities.length})</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">
+          Activities ({activities.length})
+        </h3>
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
           <DialogTrigger asChild>
             <Button>Create Activity</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Activity</DialogTitle>
             </DialogHeader>
@@ -192,8 +207,10 @@ export function ActivityManager({
                   <select
                     id="activity-type"
                     value={newActivityType}
-                    onChange={(e) => setNewActivityType(e.target.value as ActivityData["type"])}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    onChange={(e) =>
+                      setNewActivityType(e.target.value as ActivityData["type"])
+                    }
+                    className="w-full rounded-md border border-gray-300 px-3 py-2"
                   >
                     <option value="welcome">Welcome</option>
                     <option value="timer">Timer</option>
@@ -219,7 +236,9 @@ export function ActivityManager({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="welcome-subtitle">Subtitle (optional)</Label>
+                    <Label htmlFor="welcome-subtitle">
+                      Subtitle (optional)
+                    </Label>
                     <Input
                       id="welcome-subtitle"
                       placeholder="The presentation will begin shortly."
@@ -266,25 +285,34 @@ export function ActivityManager({
                       onChange={(e) => setMcQuestion(e.target.value)}
                     />
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="allow-multiple"
                       checked={allowMultiple}
-                      onCheckedChange={(checked) => setAllowMultiple(checked === true)}
+                      onCheckedChange={(checked) =>
+                        setAllowMultiple(checked === true)
+                      }
                     />
-                    <Label htmlFor="allow-multiple">Allow multiple selections</Label>
+                    <Label htmlFor="allow-multiple">
+                      Allow multiple selections
+                    </Label>
                   </div>
-                  
+
                   <div>
                     <Label>Options</Label>
-                    <div className="space-y-2 mt-2">
+                    <div className="mt-2 space-y-2">
                       {mcOptions.map((option, index) => (
-                        <div key={index} className="flex items-center space-x-2">
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2"
+                        >
                           <Input
                             placeholder={`Option ${index + 1}`}
                             value={option}
-                            onChange={(e) => updateMcOption(index, e.target.value)}
+                            onChange={(e) =>
+                              updateMcOption(index, e.target.value)
+                            }
                           />
                           {mcOptions.length > 2 && (
                             <Button
@@ -322,7 +350,9 @@ export function ActivityManager({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="fr-placeholder">Placeholder (optional)</Label>
+                    <Label htmlFor="fr-placeholder">
+                      Placeholder (optional)
+                    </Label>
                     <Input
                       id="fr-placeholder"
                       placeholder="Enter your thoughts here..."
@@ -331,7 +361,9 @@ export function ActivityManager({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="fr-max-length">Maximum Length (optional)</Label>
+                    <Label htmlFor="fr-max-length">
+                      Maximum Length (optional)
+                    </Label>
                     <Input
                       id="fr-max-length"
                       type="number"
@@ -359,16 +391,21 @@ export function ActivityManager({
                       onChange={(e) => setRankingQuestion(e.target.value)}
                     />
                   </div>
-                  
+
                   <div>
                     <Label>Items to Rank</Label>
-                    <div className="space-y-2 mt-2">
+                    <div className="mt-2 space-y-2">
                       {rankingItems.map((item, index) => (
-                        <div key={index} className="flex items-center space-x-2">
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2"
+                        >
                           <Input
                             placeholder={`Item ${index + 1}`}
                             value={item}
-                            onChange={(e) => updateRankingItem(index, e.target.value)}
+                            onChange={(e) =>
+                              updateRankingItem(index, e.target.value)
+                            }
                           />
                           {rankingItems.length > 2 && (
                             <Button
@@ -398,7 +435,7 @@ export function ActivityManager({
                 <Button variant="outline" onClick={() => setIsCreating(false)}>
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   onClick={handleCreateActivity}
                   disabled={!newActivityName.trim()}
                 >
@@ -414,9 +451,11 @@ export function ActivityManager({
         {activities.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
-              <div className="text-center text-gray-500 py-8">
+              <div className="py-8 text-center text-gray-500">
                 <p className="mb-4">No activities created yet.</p>
-                <p className="text-sm">Create your first activity to get started!</p>
+                <p className="text-sm">
+                  Create your first activity to get started!
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -426,12 +465,12 @@ export function ActivityManager({
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="text-sm text-gray-500 font-mono">
+                    <div className="font-mono text-sm text-gray-500">
                       #{index + 1}
                     </div>
                     <div>
                       <h4 className="font-medium">{activity.name}</h4>
-                      <div className="flex items-center space-x-2 mt-1">
+                      <div className="mt-1 flex items-center space-x-2">
                         <Badge variant="secondary">{activity.type}</Badge>
                         {activity.data.type === "multiple-choice" && (
                           <Badge variant="outline">
@@ -443,11 +482,12 @@ export function ActivityManager({
                             {Math.floor(activity.data.durationMs / 1000)}s
                           </Badge>
                         )}
-                        {activity.data.type === "free-response" && activity.data.maxLength && (
-                          <Badge variant="outline">
-                            Max {activity.data.maxLength} chars
-                          </Badge>
-                        )}
+                        {activity.data.type === "free-response" &&
+                          activity.data.maxLength && (
+                            <Badge variant="outline">
+                              Max {activity.data.maxLength} chars
+                            </Badge>
+                          )}
                         {activity.data.type === "ranking" && (
                           <Badge variant="outline">
                             {activity.data.items.length} items
