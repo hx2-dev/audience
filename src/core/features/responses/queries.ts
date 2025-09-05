@@ -139,4 +139,22 @@ export class ActivityResponseQueries {
       (error) => error as Error,
     );
   }
+
+  deleteByActivityId({
+    activityId,
+    connection = db,
+  }: {
+    activityId: number;
+    connection?: SchemaConnection;
+  }): TaskEither<Error, void> {
+    return TE.tryCatch(
+      async () => {
+        await connection
+          .delete(activityResponses)
+          .where(eq(activityResponses.activityId, activityId))
+          .execute();
+      },
+      (error) => error as Error,
+    );
+  }
 }

@@ -57,7 +57,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       let match;
       while ((match = codeBlockRegex.exec(content)) !== null) {
         const [, language, code] = match;
-        const trimmedCode = code.trim();
+        const trimmedCode = code?.trim() ?? "";
 
         console.log("Processing code block:", {
           language,
@@ -109,7 +109,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     inline,
     className,
     children,
-    ...props
+    ..._props
   }: {
     inline?: boolean;
     className?: string;

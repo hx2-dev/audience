@@ -40,7 +40,7 @@ function QuestionCard({ question, onAnswer, onDelete }: QuestionCardProps) {
   };
 
   return (
-    <div className="space-y-3 rounded-lg border p-4 bg-slate-100 dark:bg-slate-800">
+    <div className="space-y-3 rounded-lg border bg-slate-100 p-4 dark:bg-slate-800">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -123,7 +123,6 @@ function QuestionCard({ question, onAnswer, onDelete }: QuestionCardProps) {
   );
 }
 
-
 interface PresenterDashboardClientProps {
   eventId: number;
   session: Session;
@@ -154,15 +153,22 @@ export function PresenterDashboardClient({
   // Enhanced refetch for activity responses that also dispatches events
   const enhancedActivityResponsesRefresh = () => {
     // Dispatch event for individual activity components to pick up
-    window.dispatchEvent(new CustomEvent('activity-responses-updated'));
+    window.dispatchEvent(new CustomEvent("activity-responses-updated"));
   };
 
   // SSE connection with automatic query integration
-  const { isConnected } = useMultiSSEQuery([
-    { queryResult: questionsQuery, eventType: "questions" },
-    { queryResult: activitiesQuery, eventType: "activities" },
-    { queryResult: { refetch: enhancedActivityResponsesRefresh }, eventType: "activity-responses" },
-  ], event?.shortId, !!event?.shortId);
+  const { isConnected } = useMultiSSEQuery(
+    [
+      { queryResult: questionsQuery, eventType: "questions" },
+      { queryResult: activitiesQuery, eventType: "activities" },
+      {
+        queryResult: { refetch: enhancedActivityResponsesRefresh },
+        eventType: "activity-responses",
+      },
+    ],
+    event?.shortId,
+    !!event?.shortId,
+  );
 
   // Extract data for easier access
   const activities = activitiesQuery.data ?? [];
@@ -182,8 +188,21 @@ export function PresenterDashboardClient({
   const handleStateUpdate = async (page: string, data?: ActivityData) => {
     let updatedData = data;
 
-    // First, create a saved activity if this is an interactive activity
-    if (data && ["multiple-choice", "free-response", "ranking"].includes(data.type)) {
+    // Create a saved activity for all activity types (not just interactive ones)
+    if (
+      data &&
+      [
+        "multiple-choice",
+        "free-response",
+        "ranking",
+        "markdown",
+        "iframe",
+        "timer",
+        "welcome",
+        "break",
+        "thank-you",
+      ].includes(data.type)
+    ) {
       const getActivityName = (activityData: ActivityData): string => {
         if (activityData.type === "multiple-choice") {
           return `Multiple Choice: ${activityData.question}`;
@@ -193,6 +212,24 @@ export function PresenterDashboardClient({
         }
         if (activityData.type === "ranking") {
           return `Ranking: ${activityData.question}`;
+        }
+        if (activityData.type === "markdown") {
+          return `Markdown: ${activityData.title ?? "Content"}`;
+        }
+        if (activityData.type === "iframe") {
+          return `Iframe: ${activityData.title}`;
+        }
+        if (activityData.type === "timer") {
+          return `Timer: ${activityData.title ?? "Countdown"}`;
+        }
+        if (activityData.type === "welcome") {
+          return `Welcome: ${activityData.title ?? "Welcome Message"}`;
+        }
+        if (activityData.type === "break") {
+          return `Break: ${activityData.message ?? "Break Time"}`;
+        }
+        if (activityData.type === "thank-you") {
+          return `Thank You: ${activityData.message ?? "Thank You"}`;
         }
         return `${activityData.type} Activity`;
       };
@@ -205,10 +242,10 @@ export function PresenterDashboardClient({
         type: data.type,
         data,
       });
-      
+
       // Add the activityId to the data
       updatedData = { ...data, activityId: createdActivity.id } as ActivityData;
-      
+
       await activitiesQuery.refetch();
     }
 
@@ -431,13 +468,14 @@ export function PresenterDashboardClient({
                     <div className="py-8 text-center text-gray-500 dark:text-gray-400">
                       No activities created yet.
                       <br />
-                      Create activities in the &ldquo;Manage Activities&rdquo; tab to see responses here.
+                      Create activities in the &ldquo;Manage Activities&rdquo;
+                      tab to see responses here.
                     </div>
                   ) : (
                     activities.map((activity) => (
-                      <ActivityResponseCard 
-                        key={activity.id} 
-                        activity={activity} 
+                      <ActivityResponseCard
+                        key={activity.id}
+                        activity={activity}
                         onShowResults={handleShowResults}
                       />
                     ))

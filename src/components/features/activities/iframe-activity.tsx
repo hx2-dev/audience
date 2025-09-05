@@ -1,6 +1,5 @@
 import type { z } from "zod";
 import type { iframeActivityValidator } from "~/core/features/presenter/types";
-import { H2, P } from "~/components/ui/typography";
 
 interface IframeActivityProps {
   data: z.infer<typeof iframeActivityValidator>;

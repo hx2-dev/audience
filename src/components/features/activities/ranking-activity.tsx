@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import type { z } from "zod";
 import type { rankingQuestionValidator } from "~/core/features/presenter/types";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { useActivityData } from "~/components/features/audience/activity-tab";
@@ -24,6 +23,13 @@ export function RankingActivity({ data }: RankingActivityProps) {
   // Get pre-fetched activity data from context
   const { userResponse, allResponses, refetchData } = useActivityData();
 
+  // Reset state when activity changes (when activityId changes)
+  useEffect(() => {
+    setRankedItems([]);
+    setSubmitted(false);
+    setIsSubmitting(false);
+  }, [data.activityId]);
+
   // Populate existing response when found
   useEffect(() => {
     if (userResponse && !submitted) {
@@ -32,6 +38,10 @@ export function RankingActivity({ data }: RankingActivityProps) {
         setRankedItems(responseData);
       }
       setSubmitted(true);
+    } else if (!userResponse && submitted) {
+      // If userResponse is null but we think we submitted, reset state
+      setSubmitted(false);
+      setRankedItems([]);
     }
   }, [userResponse, submitted]);
 
@@ -100,42 +110,36 @@ export function RankingActivity({ data }: RankingActivityProps) {
 
   if (submitted && !allResponses.length) {
     return (
-      <Card className="border-green-500 bg-green-50 dark:border-green-400 dark:bg-green-900/20">
-        <CardContent className="pt-4 sm:pt-6">
-          <div className="mb-4 text-center text-base font-semibold text-green-600 sm:text-lg dark:text-green-400">
-            ✓ Ranking Submitted
-          </div>
-          <p className="mb-4 text-center text-sm text-gray-600 sm:text-base dark:text-gray-300">
-            Thank you for your ranking!
-          </p>
-          <div className="space-y-2">
-            <p className="text-center font-medium">Your ranking:</p>
-            {rankedItems.map((item, index) => (
-              <div
-                key={item}
-                className="flex items-center rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
-              >
-                <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                  {index + 1}
-                </span>
-                <span className="flex-1 break-words">{item}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-green-500 bg-green-50 p-4 sm:p-6 dark:border-green-400 dark:bg-green-900/20">
+        <div className="mb-4 text-center text-base font-semibold text-green-600 sm:text-lg dark:text-green-400">
+          ✓ Ranking Submitted
+        </div>
+        <p className="mb-4 text-center text-sm text-gray-600 sm:text-base dark:text-gray-300">
+          Thank you for your ranking!
+        </p>
+        <div className="space-y-2">
+          <p className="text-center font-medium">Your ranking:</p>
+          {rankedItems.map((item, index) => (
+            <div
+              key={item}
+              className="flex items-center rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
+            >
+              <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                {index + 1}
+              </span>
+              <span className="flex-1 break-words">{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg sm:text-xl">Ranking Question</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 sm:space-y-6">
-        <div className="text-base font-medium break-words sm:text-lg">
-          {data.question}
-        </div>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="text-base font-medium break-words sm:text-lg">
+        {data.question}
+      </div>
 
         {rankedItems.length > 0 && (
           <div className="space-y-2">
@@ -239,7 +243,6 @@ export function RankingActivity({ data }: RankingActivityProps) {
             </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

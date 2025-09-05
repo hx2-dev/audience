@@ -11,6 +11,34 @@ import type {
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { api } from "~/trpc/react";
 
+interface RankingResultItem {
+  item: string;
+  score: number;
+  averagePosition: number;
+}
+
+type AggregatedResults =
+  | {
+      type: "multiple-choice";
+      question: string;
+      options: string[];
+      optionCounts: Record<string, number>;
+      totalResponses: number;
+      percentages: Record<string, number>;
+    }
+  | {
+      type: "ranking";
+      question: string;
+      items: string[];
+      sortedItems: RankingResultItem[];
+      totalResponses: number;
+    }
+  | {
+      type: "free-response";
+      question: string;
+      totalResponses: number;
+    };
+
 interface ResultsActivityProps {
   data: z.infer<typeof resultsActivityValidator>;
 }

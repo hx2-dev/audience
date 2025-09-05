@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import type { z } from "zod";
 import type { multipleChoiceQuestionValidator } from "~/core/features/presenter/types";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { api } from "~/trpc/react";
@@ -24,6 +23,13 @@ export function MultipleChoiceActivity({ data }: MultipleChoiceActivityProps) {
   // Get pre-fetched activity data from context
   const { userResponse, allResponses, refetchData } = useActivityData();
 
+  // Reset state when activity changes (when activityId changes)
+  useEffect(() => {
+    setSelectedOptions([]);
+    setSubmitted(false);
+    setIsSubmitting(false);
+  }, [data.activityId]);
+
   // Populate existing response when found
   useEffect(() => {
     if (userResponse && !submitted) {
@@ -34,6 +40,10 @@ export function MultipleChoiceActivity({ data }: MultipleChoiceActivityProps) {
         setSelectedOptions([responseData]);
       }
       setSubmitted(true);
+    } else if (!userResponse && submitted) {
+      // If userResponse is null but we think we submitted, reset state
+      setSubmitted(false);
+      setSelectedOptions([]);
     }
   }, [userResponse, submitted]);
 
