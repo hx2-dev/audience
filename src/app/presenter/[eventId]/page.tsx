@@ -5,7 +5,7 @@ import { auth } from "~/core/generic/auth";
 export default async function PresenterPage({
   params,
 }: {
-  params: { eventId: string };
+  params: Promise<{ eventId: string }>;
 }) {
   const session = await auth();
 
@@ -13,7 +13,7 @@ export default async function PresenterPage({
     redirect("/api/auth/signin");
   }
 
-  const eventId = parseInt(params.eventId);
+  const eventId = parseInt((await params).eventId);
 
   if (!eventId || isNaN(eventId)) {
     return (

@@ -6,7 +6,7 @@ import { PresenterResponsesPageClient } from "./presenter-responses-client";
 export default async function PresenterResponsesPage({
   params,
 }: {
-  params: { eventId: string };
+  params: Promise<{ eventId: string }>;
 }) {
   const session = await auth();
 
@@ -14,7 +14,7 @@ export default async function PresenterResponsesPage({
     redirect("/api/auth/signin");
   }
 
-  const eventId = parseInt(params.eventId);
+  const eventId = parseInt((await params).eventId);
 
   if (!eventId || isNaN(eventId)) {
     return (

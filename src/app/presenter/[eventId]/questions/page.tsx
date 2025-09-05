@@ -6,7 +6,7 @@ import { PresenterQuestionsPageClient } from "./presenter-questions-client";
 export default async function PresenterQuestionsPage({
   params,
 }: {
-  params: { eventId: string };
+  params: Promise<{ eventId: string }>;
 }) {
   const session = await auth();
 
@@ -14,7 +14,7 @@ export default async function PresenterQuestionsPage({
     redirect("/api/auth/signin");
   }
 
-  const eventId = parseInt(params.eventId);
+  const eventId = parseInt((await params).eventId);
 
   if (!eventId || isNaN(eventId)) {
     return (
