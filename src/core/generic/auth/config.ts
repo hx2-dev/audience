@@ -1,4 +1,5 @@
 import DiscordProvider from "next-auth/providers/discord";
+import GoogleProvider from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "~/adapters/db";
 import {
@@ -37,6 +38,7 @@ declare module "next-auth" {
  */
 export const authConfig = {
   providers: [
+    GoogleProvider,
     DiscordProvider,
     /**
      * ...add more providers here.
