@@ -1,12 +1,14 @@
 import type { SSEMessage } from "./route";
 
 // Also import the poll broadcast function
-let broadcastToPollClients: ((
-  shortId: string,
-  refreshTypes: Array<
-    "presenter-state" | "questions" | "activities" | "activity-responses"
-  >
-) => void) | null = null;
+let broadcastToPollClients:
+  | ((
+      shortId: string,
+      refreshTypes: Array<
+        "presenter-state" | "questions" | "activities" | "activity-responses"
+      >,
+    ) => void)
+  | null = null;
 
 // Dynamically import to avoid circular dependency
 async function getBroadcastToPollClients() {
@@ -48,6 +50,22 @@ export function removeConnection(
       // All connections closed for shortId ${shortId}
     }
   }
+}
+
+export async function getConnectionCount(shortId: string): Promise<number> {
+  const eventConnections = connections.get(shortId);
+  const sseCount = eventConnections ? eventConnections.size : 0;
+  
+  // Get polling connection count
+  let pollingCount = 0;
+  try {
+    const pollModule = await import("../poll/route");
+    pollingCount = pollModule.getPollingConnectionCount(shortId);
+  } catch (error) {
+    console.error("Error getting polling connection count:", error);
+  }
+  
+  return sseCount + pollingCount;
 }
 
 export async function broadcastToEvent(

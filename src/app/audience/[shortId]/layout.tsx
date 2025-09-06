@@ -7,7 +7,7 @@ import { EventService } from "~/core/features/events/service";
 import * as E from "fp-ts/lib/Either";
 import { Card, CardContent } from "~/components/ui/card";
 import { EventProvider } from "~/components/providers/event-provider";
-import { AudienceLayoutHeader } from "~/components/features/audience/audience-layout-header";
+import { AudienceLayoutClient } from "~/components/features/audience/audience-layout-client";
 import { Badge } from "~/components/ui/badge";
 
 export default async function AudienceLayout({
@@ -73,8 +73,9 @@ export default async function AudienceLayout({
   return (
     <EventProvider event={event} shortId={shortId} session={session}>
       <div className="mx-auto max-w-7xl p-4 sm:p-6">
-        <AudienceLayoutHeader />
-        {children}
+        <AudienceLayoutClient>
+          {children}
+        </AudienceLayoutClient>
       </div>
     </EventProvider>
   );

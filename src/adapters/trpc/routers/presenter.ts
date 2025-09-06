@@ -142,4 +142,14 @@ export const presenterRouter = createTRPCRouter({
         service.updateState(input, ctx.session.user.id),
       );
     }),
+
+  getConnectionCount: protectedProcedure
+    .input(z.object({ shortId: z.string() }))
+    .query<{ connectionCount: number }>(async ({ input }) => {
+      const { getConnectionCount } = await import(
+        "~/app/api/events/[shortId]/stream/connections"
+      );
+      const connectionCount = await getConnectionCount(input.shortId);
+      return { connectionCount };
+    }),
 });

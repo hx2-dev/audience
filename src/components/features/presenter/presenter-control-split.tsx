@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
@@ -18,7 +24,10 @@ interface PresenterControlProps {
   onStateUpdate: (page: string, data?: ActivityData) => Promise<void>;
 }
 
-export function PresenterControlSplit({ eventShortId, onStateUpdate }: PresenterControlProps) {
+export function PresenterControlSplit({
+  eventShortId,
+  onStateUpdate,
+}: PresenterControlProps) {
   const [currentPage, setCurrentPage] = useState("welcome");
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -38,8 +47,6 @@ export function PresenterControlSplit({ eventShortId, onStateUpdate }: Presenter
     await handlePageChange(data.type, data);
   };
 
-  const audienceUrl = `${window.location.origin}/audience/${eventShortId}`;
-
   return (
     <div className="space-y-6">
       <Card className="bg-slate-100 dark:bg-slate-800">
@@ -50,32 +57,6 @@ export function PresenterControlSplit({ eventShortId, onStateUpdate }: Presenter
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="audience-url">Audience URL</Label>
-            <div className="flex items-center space-x-2">
-              <Input
-                id="audience-url"
-                value={audienceUrl}
-                readOnly
-                className="font-mono text-sm"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigator.clipboard.writeText(audienceUrl)}
-              >
-                Copy
-              </Button>
-            </div>
-          </div>
-          
-          <div>
-            <Label>Event ID</Label>
-            <Badge variant="outline" className="ml-2 font-mono text-lg">
-              {eventShortId.toUpperCase()}
-            </Badge>
-          </div>
-          
           <div>
             <Label>Current Page</Label>
             <Badge className="ml-2">{currentPage}</Badge>
@@ -90,7 +71,9 @@ export function PresenterControlSplit({ eventShortId, onStateUpdate }: Presenter
         <CardContent className="flex flex-wrap gap-2">
           <Button
             variant={currentPage === "welcome" ? "default" : "outline"}
-            onClick={() => void handlePageChange("welcome", { type: "welcome" })}
+            onClick={() =>
+              void handlePageChange("welcome", { type: "welcome" })
+            }
             disabled={isUpdating}
           >
             Welcome
@@ -104,7 +87,9 @@ export function PresenterControlSplit({ eventShortId, onStateUpdate }: Presenter
           </Button>
           <Button
             variant="outline"
-            onClick={() => void handlePageChange("thank-you", { type: "thank-you" })}
+            onClick={() =>
+              void handlePageChange("thank-you", { type: "thank-you" })
+            }
             disabled={isUpdating}
           >
             Thank You
@@ -113,27 +98,56 @@ export function PresenterControlSplit({ eventShortId, onStateUpdate }: Presenter
       </Card>
 
       <Tabs defaultValue="timer" className="w-full">
-        <TabsList className="flex flex-wrap gap-1 w-full h-auto p-1">
-          <TabsTrigger value="timer" className="flex-grow min-w-[120px] sm:flex-1 sm:basis-0">Timer</TabsTrigger>
-          <TabsTrigger value="multiple-choice" className="flex-grow min-w-[120px] sm:flex-1 sm:basis-0">Multiple Choice</TabsTrigger>
-          <TabsTrigger value="free-response" className="flex-grow min-w-[120px] sm:flex-1 sm:basis-0">Free Response</TabsTrigger>
-          <TabsTrigger value="ranking" className="flex-grow min-w-[120px] sm:flex-1 sm:basis-0">Ranking</TabsTrigger>
+        <TabsList className="flex h-auto w-full flex-wrap gap-1 p-1">
+          <TabsTrigger
+            value="timer"
+            className="min-w-[120px] flex-grow sm:flex-1 sm:basis-0"
+          >
+            Timer
+          </TabsTrigger>
+          <TabsTrigger
+            value="multiple-choice"
+            className="min-w-[120px] flex-grow sm:flex-1 sm:basis-0"
+          >
+            Multiple Choice
+          </TabsTrigger>
+          <TabsTrigger
+            value="free-response"
+            className="min-w-[120px] flex-grow sm:flex-1 sm:basis-0"
+          >
+            Free Response
+          </TabsTrigger>
+          <TabsTrigger
+            value="ranking"
+            className="min-w-[120px] flex-grow sm:flex-1 sm:basis-0"
+          >
+            Ranking
+          </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="timer" className="space-y-4">
           <TimerControl onStart={handleActivityStart} isUpdating={isUpdating} />
         </TabsContent>
-        
+
         <TabsContent value="multiple-choice" className="space-y-4">
-          <MultipleChoiceControl onStart={handleActivityStart} isUpdating={isUpdating} />
+          <MultipleChoiceControl
+            onStart={handleActivityStart}
+            isUpdating={isUpdating}
+          />
         </TabsContent>
-        
+
         <TabsContent value="free-response" className="space-y-4">
-          <FreeResponseControl onStart={handleActivityStart} isUpdating={isUpdating} />
+          <FreeResponseControl
+            onStart={handleActivityStart}
+            isUpdating={isUpdating}
+          />
         </TabsContent>
-        
+
         <TabsContent value="ranking" className="space-y-4">
-          <RankingControl onStart={handleActivityStart} isUpdating={isUpdating} />
+          <RankingControl
+            onStart={handleActivityStart}
+            isUpdating={isUpdating}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -3,6 +3,7 @@
 import { PresenterHeader } from "~/components/features/presenter/presenter-header";
 import { usePresenterEvent } from "~/components/providers/presenter-event-provider";
 import { useMultiSSEQuery } from "~/components/hooks/use-sse-query";
+import { useConnectionCount } from "~/components/hooks/use-connection-count";
 
 export function PresenterLayoutHeader() {
   const { event } = usePresenterEvent();
@@ -19,11 +20,15 @@ export function PresenterLayoutHeader() {
     !!event.shortId,
   );
 
+  // Get connection count with auto-refresh
+  const { connectionCount } = useConnectionCount(event.shortId);
+
   return (
     <div className="mx-auto max-w-7xl">
       <PresenterHeader
         event={event}
         isConnected={isConnected}
+        connectionCount={connectionCount}
       />
     </div>
   );

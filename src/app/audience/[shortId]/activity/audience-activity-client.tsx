@@ -3,12 +3,20 @@
 import { ActivityTab } from "~/components/features/audience/activity-tab";
 import { AudienceTabsNavigation } from "~/components/features/audience/audience-tabs-navigation";
 import { api } from "~/trpc/react";
-import { useMultiSSEQuery } from "~/components/hooks/use-sse-query";
+import { useSSE } from "~/components/providers/sse-provider";
 import { useEvent } from "~/components/providers/event-provider";
+import { useEffect } from "react";
 
 export function AudienceActivityPageClient() {
   // Get event data from context
   const { event, shortId } = useEvent();
+
+  // Get SSE connection from context
+  const { 
+    onPresenterStateRefresh,
+    onQuestionsRefresh,
+    onActivityResponsesRefresh
+  } = useSSE();
 
   // Get presenter state with user response data in one query
   const combinedDataQuery = api.presenter.getStateWithUserResponse.useQuery(
@@ -42,25 +50,18 @@ export function AudienceActivityPageClient() {
     );
   };
 
-  // SSE connection with automatic query integration
-  const {} = useMultiSSEQuery(
-    [
-      {
-        queryResult: { refetch: enhancedCombinedRefresh },
-        eventType: "presenter-state",
-      },
-      {
-        queryResult: { refetch: enhancedQuestionsRefresh },
-        eventType: "questions",
-      },
-      {
-        queryResult: { refetch: enhancedCombinedRefresh },
-        eventType: "activity-responses",
-      },
-    ],
-    shortId,
-    true,
-  );
+  // Register callbacks with SSE context
+  useEffect(() => {
+    const unregisterPresenterState = onPresenterStateRefresh(enhancedCombinedRefresh);
+    const unregisterQuestions = onQuestionsRefresh(enhancedQuestionsRefresh);
+    const unregisterActivityResponses = onActivityResponsesRefresh(enhancedCombinedRefresh);
+
+    return () => {
+      unregisterPresenterState();
+      unregisterQuestions();
+      unregisterActivityResponses();
+    };
+  }, [onPresenterStateRefresh, onQuestionsRefresh, onActivityResponsesRefresh, enhancedCombinedRefresh, enhancedQuestionsRefresh]);
 
   // Extract data for easier access
   const combinedData = combinedDataQuery.data;
@@ -69,31 +70,28 @@ export function AudienceActivityPageClient() {
 
 
   return (
-    <div>
-      <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
+      <AudienceTabsNavigation
+        shortId={shortId}
+        currentPage="activity"
+        questionsCount={questions.length}
+      />
 
-        <AudienceTabsNavigation
-          shortId={shortId}
-          currentPage="activity"
-          questionsCount={questions.length}
+      {/* Activity Content */}
+      {presenterState ? (
+        <ActivityTab
+          presenterState={presenterState}
+          userResponse={combinedData?.userResponse ?? null}
+          allResponses={combinedData?.allResponses ?? []}
+          refetchData={combinedDataQuery.refetch}
         />
-
-        {/* Activity Content */}
-        {presenterState ? (
-          <ActivityTab
-            presenterState={presenterState}
-            userResponse={combinedData?.userResponse ?? null}
-            allResponses={combinedData?.allResponses ?? []}
-            refetchData={combinedDataQuery.refetch}
-          />
-        ) : (
-          <div className="py-8 text-center">
-            <p className="text-gray-500 dark:text-gray-400">
-              Waiting for presenter to start an activity...
-            </p>
-          </div>
-        )}
-      </div>
+      ) : (
+        <div className="py-8 text-center">
+          <p className="text-gray-500 dark:text-gray-400">
+            Waiting for presenter to start an activity...
+          </p>
+        </div>
+      )}
     </div>
   );
 }

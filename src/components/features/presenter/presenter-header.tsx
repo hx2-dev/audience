@@ -6,11 +6,13 @@ import type { Event } from "~/core/features/events/types";
 interface PresenterHeaderProps {
   event: Event;
   isConnected: boolean;
+  connectionCount: number;
 }
 
 export function PresenterHeader({
   event,
   isConnected,
+  connectionCount,
 }: PresenterHeaderProps) {
   return (
     <div className="mb-6">
@@ -27,7 +29,7 @@ export function PresenterHeader({
         </div>
         <div className="lg:shrink-0 lg:text-right">
           <div className="mb-2 flex flex-col items-start gap-2 sm:flex-row lg:flex-col lg:items-end">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm text-gray-600 dark:text-gray-300">
                 Status:
               </span>
@@ -37,6 +39,14 @@ export function PresenterHeader({
               >
                 {isConnected ? "Connected" : "Connecting..."}
               </Badge>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  Audience:
+                </span>
+                <Badge variant="secondary" className="shrink-0">
+                  {connectionCount}
+                </Badge>
+              </div>
             </div>
             <Badge
               variant="outline"

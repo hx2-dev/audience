@@ -20,6 +20,8 @@ const pendingPolls = new Map<
     resolve: (message: PollMessage) => void;
     reject: (error: Error) => void;
     timeout: NodeJS.Timeout;
+    createdAt: number;
+    request: NextRequest;
   }>
 >();
 
@@ -36,15 +38,61 @@ export function broadcastToPollClients(
       data: { refreshTypes },
     };
 
-    // Resolve all pending polls for this event
+    const now = Date.now();
+    const staleThreshold = 30 * 1000; // 30 seconds
+    const disconnectedPolls: Array<{
+      resolve: (message: PollMessage) => void;
+      reject: (error: Error) => void;
+      timeout: NodeJS.Timeout;
+      createdAt: number;
+      request: NextRequest;
+    }> = [];
+
+    // Attempt to resolve polls, but with timeout protection
     polls.forEach((poll) => {
-      clearTimeout(poll.timeout);
-      poll.resolve(message);
+      try {
+        // Check if request is potentially disconnected
+        const isStale = now - poll.createdAt > staleThreshold;
+        const isAborted = poll.request.signal?.aborted;
+        
+        if (isAborted || isStale) {
+          disconnectedPolls.push(poll);
+          return;
+        }
+
+        // Try to resolve with a short timeout
+        clearTimeout(poll.timeout);
+        
+        // Use a Promise.race to avoid hanging on potentially dead connections
+        Promise.race([
+          Promise.resolve().then(() => poll.resolve(message)),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Resolve timeout")), 100)
+          )
+        ]).catch(() => {
+          // If resolve times out, treat as disconnected
+          disconnectedPolls.push(poll);
+        });
+      } catch {
+        // If we can't access the poll, it's likely disconnected
+        disconnectedPolls.push(poll);
+      }
     });
 
-    // Clear the polls after responding
+    // Clean up disconnected/stale polls
+    disconnectedPolls.forEach((poll) => {
+      clearTimeout(poll.timeout);
+      polls.delete(poll);
+    });
+
+    // Clear all remaining polls after attempting broadcast
     polls.clear();
   }
+}
+
+export function getPollingConnectionCount(shortId: string): number {
+  const polls = pendingPolls.get(shortId);
+  return polls ? polls.size : 0;
 }
 
 export async function GET(
@@ -63,7 +111,7 @@ export async function GET(
 
     // Set up the long polling promise
     const pollPromise = new Promise<PollMessage>((resolve, reject) => {
-      // Set up 4-minute timeout
+      // Set up 1-minute timeout
       const timeout = setTimeout(
         () => {
           // Remove this poll from pending
@@ -90,7 +138,13 @@ export async function GET(
       }
 
       const polls = pendingPolls.get(shortId)!;
-      polls.add({ resolve, reject, timeout });
+      polls.add({ 
+        resolve, 
+        reject, 
+        timeout, 
+        createdAt: Date.now(),
+        request 
+      });
     });
 
     // Wait for either data or timeout
