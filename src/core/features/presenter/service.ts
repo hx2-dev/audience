@@ -52,7 +52,7 @@ export class PresenterService {
   private broadcastStateChange(shortId: string, _state: PresenterState) {
     return TE.tryCatch(
       async () => {
-        broadcastToEvent(shortId, ["presenter-state"]);
+        await broadcastToEvent(shortId, ["presenter-state"]);
         console.log(
           `[Presenter Service] Broadcast completed for shortId: ${shortId}`,
         );

@@ -131,7 +131,7 @@ export class QuestionService {
   private broadcastQuestionChange(shortId: string) {
     return TE.tryCatch(
       async () => {
-        broadcastToEvent(shortId, ["questions"]);
+        await broadcastToEvent(shortId, ["questions"]);
       },
       (error) => error as Error,
     );

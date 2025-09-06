@@ -244,7 +244,7 @@ export class ActivityService {
   ): TaskEither<Error, void> {
     return TE.tryCatch(
       async () => {
-        broadcastToEvent(shortId, ["activity-responses"]);
+        await broadcastToEvent(shortId, ["activity-responses"]);
       },
       (error) => error as Error,
     );
@@ -281,7 +281,7 @@ export class ActivityService {
   private broadcastStateChange(shortId: string): TaskEither<Error, void> {
     return TE.tryCatch(
       async () => {
-        broadcastToEvent(shortId, ["presenter-state"]);
+        await broadcastToEvent(shortId, ["presenter-state"]);
       },
       (error) => error as Error,
     );

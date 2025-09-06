@@ -1,5 +1,22 @@
 import type { SSEMessage } from "./route";
 
+// Also import the poll broadcast function
+let broadcastToPollClients: ((
+  shortId: string,
+  refreshTypes: Array<
+    "presenter-state" | "questions" | "activities" | "activity-responses"
+  >
+) => void) | null = null;
+
+// Dynamically import to avoid circular dependency
+async function getBroadcastToPollClients() {
+  if (!broadcastToPollClients) {
+    const pollModule = await import("../poll/route");
+    broadcastToPollClients = pollModule.broadcastToPollClients;
+  }
+  return broadcastToPollClients;
+}
+
 const connections = new Map<string, Set<ReadableStreamDefaultController>>();
 
 export function addConnection(
@@ -33,7 +50,7 @@ export function removeConnection(
   }
 }
 
-export function broadcastToEvent(
+export async function broadcastToEvent(
   shortId: string,
   refreshTypes: Array<
     "presenter-state" | "questions" | "activities" | "activity-responses"
@@ -41,6 +58,7 @@ export function broadcastToEvent(
 ) {
   // Broadcasting to shortId: ${shortId}, types: [${refreshTypes.join(', ')}]
 
+  // Broadcast to SSE connections
   const eventConnections = connections.get(shortId);
   if (eventConnections && eventConnections.size > 0) {
     const sseMessage: SSEMessage = {
@@ -69,6 +87,14 @@ export function broadcastToEvent(
       // Cleaned up ${deadConnections.length} dead connections
     }
   } else {
-    // No connections found for shortId ${shortId}
+    // No SSE connections found for shortId ${shortId}
+  }
+
+  // Also broadcast to polling clients
+  try {
+    const pollBroadcast = await getBroadcastToPollClients();
+    pollBroadcast(shortId, refreshTypes);
+  } catch (error) {
+    console.error("Error broadcasting to poll clients:", error);
   }
 }

@@ -1,53 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 
-// NOTE: This hook now uses long polling by default instead of SSE.
-// Use the new hooks from use-sse-query.ts instead:
-// - useSSEQuery, useQuestionsSSE, useActivitiesSSE, etc.
-// This hook is maintained for internal use by the new SSE hooks only.
-
-// For backward compatibility, keep the same interface but adapt to polling
-export interface SSEMessage {
-  type: "connected" | "refresh";
-  data?: {
-    refreshTypes: Array<"presenter-state" | "questions" | "activities" | "activity-responses">;
-  };
-}
-
-// Internal polling message interface
-interface PollMessage {
+export interface PollMessage {
   type: "refresh" | "no-op";
   data?: {
     refreshTypes: Array<"presenter-state" | "questions" | "activities" | "activity-responses">;
   };
 }
 
-export interface SSECallbacks {
+export interface PollingCallbacks {
   onPresenterStateRefresh?: () => void;
   onQuestionsRefresh?: () => void;
   onActivitiesRefresh?: () => void;
   onActivityResponsesRefresh?: () => void;
 }
 
-export interface UseEventSSEOptions {
+export interface UseEventPollingOptions {
   shortId?: string;
-  callbacks?: SSECallbacks;
+  callbacks?: PollingCallbacks;
   enabled?: boolean;
 }
 
-export interface UseEventSSEReturn {
+export interface UseEventPollingReturn {
   isConnected: boolean;
   error: string | null;
-  usingPolling: boolean;
 }
 
-export function useEventSSE({
+export function useEventPolling({
   shortId,
   callbacks = {},
   enabled = true,
-}: UseEventSSEOptions): UseEventSSEReturn {
+}: UseEventPollingOptions): UseEventPollingReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [usingPolling] = useState(true); // Always using polling now
   const abortControllerRef = useRef<AbortController | null>(null);
   const callbacksRef = useRef(callbacks);
   const isPollingRef = useRef(false);
@@ -61,7 +45,7 @@ export function useEventSSE({
       return;
     }
 
-    const startLongPolling = async () => {
+    const startPolling = async () => {
       if (isPollingRef.current) {
         return; // Already polling
       }
@@ -122,7 +106,7 @@ export function useEventSSE({
       setIsConnected(false);
     };
 
-    void startLongPolling();
+    void startPolling();
 
     return () => {
       isPollingRef.current = false;
@@ -136,6 +120,5 @@ export function useEventSSE({
   return {
     isConnected,
     error,
-    usingPolling,
   };
 }

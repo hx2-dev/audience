@@ -177,7 +177,7 @@ export class ActivityResponseService {
 
     return TE.tryCatch(
       async () => {
-        broadcastToEvent(shortId, ["activity-responses"]);
+        await broadcastToEvent(shortId, ["activity-responses"]);
       },
       (error) => error as Error,
     );
