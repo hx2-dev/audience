@@ -9,6 +9,7 @@ import {
 } from "~/core/features/presenter/service";
 import { PresenterQueries } from "~/core/features/presenter/queries";
 import { ActivityResponseQueries } from "~/core/features/responses/queries";
+import { ActivityResultsService } from "~/core/features/activities/results-service";
 import { ForbiddenError } from "~/core/common/error";
 import type {
   Activity,
@@ -17,6 +18,7 @@ import type {
 } from "~/core/features/activities/types";
 import type { Event } from "~/core/features/events/types";
 import type { ActivityData } from "~/core/features/presenter/types";
+import type { ActivityResult } from "~/core/features/activities/results";
 import { pipe } from "fp-ts/lib/function";
 import { broadcastToEvent } from "~/app/api/events/[shortId]/stream/connections";
 
@@ -33,6 +35,8 @@ export class ActivityService {
     private readonly presenterQueries: PresenterQueries,
     @inject(ActivityResponseQueries)
     private readonly responseQueries: ActivityResponseQueries,
+    @inject(ActivityResultsService)
+    private readonly resultsService: ActivityResultsService,
   ) {}
 
   getByEventId(eventId: string): TaskEither<Error, Activity[]> {
@@ -91,6 +95,7 @@ export class ActivityService {
       TE.flatMap(() => this.activityQueries.delete({ id: activityId, userId })),
     );
   }
+
 
   reorder(activityIds: number[], userId: string): TaskEither<Error, void> {
     return pipe(
@@ -384,6 +389,19 @@ export class ActivityService {
       default:
         return baseData as ActivityData;
     }
+  }
+
+  getResults(activityId: number, userId: string): TaskEither<Error, ActivityResult> {
+    return pipe(
+      this.getById(activityId),
+      TE.flatMap((activity) =>
+        pipe(
+          this.eventService.getById(activity.eventId),
+          TE.flatMap(this.checkEventAuthorization(userId)),
+          TE.flatMap(() => this.resultsService.getResultsForActivity(activityId))
+        )
+      )
+    );
   }
 
   private checkEventAuthorization(userId: string) {

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { z } from "zod";
 import type { rankingQuestionValidator } from "~/core/features/presenter/types";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { useActivityData } from "~/components/features/audience/activity-tab";
-import { RankingResults } from "~/components/features/results/ranking-results";
+import { useDebounce } from "~/components/hooks/use-debounce";
 
 interface RankingActivityProps {
   data: z.infer<typeof rankingQuestionValidator>;
@@ -14,35 +14,58 @@ interface RankingActivityProps {
 
 export function RankingActivity({ data }: RankingActivityProps) {
   const [rankedItems, setRankedItems] = useState<string[]>([]);
-  const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitResponseMutation = api.responses.submit.useMutation();
 
   // Get pre-fetched activity data from context
-  const { userResponse, allResponses, refetchData } = useActivityData();
+  const { userResponse, refetchData } = useActivityData();
+
 
   // Reset state when activity changes (when activityId changes)
   useEffect(() => {
     setRankedItems([]);
-    setSubmitted(false);
     setIsSubmitting(false);
   }, [data.activityId]);
 
   // Populate existing response when found
   useEffect(() => {
-    if (userResponse && !submitted) {
+    if (userResponse) {
       const responseData = userResponse.response;
       if (Array.isArray(responseData)) {
         setRankedItems(responseData);
       }
-      setSubmitted(true);
-    } else if (!userResponse && submitted) {
-      // If userResponse is null but we think we submitted, reset state
-      setSubmitted(false);
+    } else {
       setRankedItems([]);
     }
-  }, [userResponse, submitted]);
+  }, [userResponse]);
+
+  const submitResponse = useCallback(async (items: string[]) => {
+    if (items.length === data.items.length && data.activityId && !isSubmitting) {
+      setIsSubmitting(true);
+      try {
+        await submitResponseMutation.mutateAsync({
+          activityId: data.activityId,
+          response: items,
+        });
+        // Refetch combined data to get the latest response data
+        refetchData();
+      } catch (error) {
+        console.error("Failed to submit response:", error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  }, [data.items.length, data.activityId, isSubmitting, submitResponseMutation, refetchData]);
+
+  const debouncedSubmitResponse = useDebounce(submitResponse, 500);
+
+  // Auto-submit when all items are ranked (with debouncing)
+  useEffect(() => {
+    if (rankedItems.length === data.items.length) {
+      void debouncedSubmitResponse(rankedItems);
+    }
+  }, [rankedItems, data.items.length, debouncedSubmitResponse]);
 
   const unrankedItems = data.items.filter(
     (item) => !rankedItems.includes(item),
@@ -67,72 +90,6 @@ export function RankingActivity({ data }: RankingActivityProps) {
     }
   };
 
-  const handleSubmit = async () => {
-    if (rankedItems.length === data.items.length && data.activityId) {
-      setIsSubmitting(true);
-      try {
-        await submitResponseMutation.mutateAsync({
-          activityId: data.activityId,
-          response: rankedItems,
-        });
-        setSubmitted(true);
-        // Refetch combined data to get the latest response data
-        refetchData();
-      } catch (error) {
-        console.error("Failed to submit response:", error);
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-
-  const canSubmit =
-    rankedItems.length === data.items.length &&
-    data.activityId &&
-    !isSubmitting;
-  const hasUserResponded = submitted || !!userResponse;
-  const showResults = hasUserResponded && allResponses.length > 0;
-
-  if (showResults) {
-    return (
-      <RankingResults
-        data={{
-          question: data.question,
-          items: data.items,
-        }}
-        allResponses={allResponses}
-        userRanking={rankedItems}
-        showSubmissionBanner={submitted}
-      />
-    );
-  }
-
-  if (submitted && !allResponses.length) {
-    return (
-      <div className="rounded-lg border border-green-500 bg-green-50 p-4 sm:p-6 dark:border-green-400 dark:bg-green-900/20">
-        <div className="mb-4 text-center text-base font-semibold text-green-600 sm:text-lg dark:text-green-400">
-          ✓ Ranking Submitted
-        </div>
-        <p className="mb-4 text-center text-sm text-gray-600 sm:text-base dark:text-gray-300">
-          Thank you for your ranking!
-        </p>
-        <div className="space-y-2">
-          <p className="text-center font-medium">Your ranking:</p>
-          {rankedItems.map((item, index) => (
-            <div
-              key={item}
-              className="flex items-center rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-slate-800"
-            >
-              <span className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                {index + 1}
-              </span>
-              <span className="flex-1 break-words">{item}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -142,7 +99,14 @@ export function RankingActivity({ data }: RankingActivityProps) {
 
       {rankedItems.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-base font-medium">Your Ranking:</h3>
+          <h3 className="flex items-center text-base font-medium">
+            Your Ranking:
+            {isSubmitting && (
+              <div className="ml-2 flex items-center">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+              </div>
+            )}
+          </h3>
           {rankedItems.map((item, index) => (
             <div
               key={item}
@@ -222,19 +186,10 @@ export function RankingActivity({ data }: RankingActivityProps) {
           </p>
         )}
 
-        {!data.activityId ? (
+        {!data.activityId && (
           <div className="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
             This activity is not accepting responses yet.
           </div>
-        ) : (
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="min-h-[44px] w-full"
-            size="lg"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Ranking"}
-          </Button>
         )}
       </div>
     </div>

@@ -1,83 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import type { ActivityResponse } from "~/core/features/responses/types";
-
-export interface RankingResultsData {
-  question: string;
-  items: string[];
-}
+import type { RankingResult } from "~/core/features/activities/results";
 
 interface RankingResultsProps {
-  data: RankingResultsData;
-  allResponses: ActivityResponse[];
-  userRanking: string[];
+  result: RankingResult;
+  userRanking?: string[];
   showSubmissionBanner?: boolean;
 }
 
-interface RankingItem {
-  item: string;
-  averagePosition: number;
-  voteCount: number;
-  score: number;
-}
-
-interface AggregatedResults {
-  rankings: RankingItem[];
-  totalResponses: number;
-}
-
 export function RankingResults({
-  data: _data,
-  allResponses,
-  userRanking,
+  result,
+  userRanking = [],
   showSubmissionBanner = false,
 }: RankingResultsProps) {
-  // Calculate aggregated results
-  const aggregatedResults = useMemo((): AggregatedResults => {
-    if (!allResponses.length) {
-      return {
-        rankings: [],
-        totalResponses: 0,
-      };
-    }
-
-    // Calculate average position for each item
-    const itemScores = new Map<string, { sum: number; count: number }>();
-
-    allResponses.forEach((response) => {
-      const responseData = response.response;
-      if (Array.isArray(responseData)) {
-        responseData.forEach((item: string, index: number) => {
-          const position = index + 1; // 1-based position
-          const existing = itemScores.get(item);
-          if (existing) {
-            existing.sum += position;
-            existing.count += 1;
-          } else {
-            itemScores.set(item, { sum: position, count: 1 });
-          }
-        });
-      }
-    });
-
-    // Calculate average positions and sort by best average (lowest number)
-    const rankedResults = Array.from(itemScores.entries())
-      .map(([item, { sum, count }]) => ({
-        item,
-        averagePosition: sum / count,
-        voteCount: count,
-        score: Math.round((sum / count) * 100) / 100, // Round to 2 decimal places
-      }))
-      .sort((a, b) => a.averagePosition - b.averagePosition);
-
-    return {
-      rankings: rankedResults,
-      totalResponses: allResponses.length,
-    };
-  }, [allResponses]);
-
   return (
     <div className="space-y-4">
       {showSubmissionBanner && (
@@ -111,12 +47,12 @@ export function RankingResults({
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Ranking Results</CardTitle>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {aggregatedResults.totalResponses} total response
-            {aggregatedResults.totalResponses !== 1 ? "s" : ""}
+            {result.totalResponses} total response
+            {result.totalResponses !== 1 ? "s" : ""}
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
-          {aggregatedResults.rankings.map((item, index) => {
+          {result.items.map((item, index) => {
             const isUserRanked = userRanking.includes(item.item);
             const userPosition = userRanking.indexOf(item.item) + 1;
 
@@ -148,7 +84,7 @@ export function RankingResults({
                       )}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
-                      <span>Avg. position: {item.score}</span>
+                      <span>Avg. position: {item.averagePosition.toFixed(2)}</span>
                       <span>
                         {item.voteCount} vote{item.voteCount !== 1 ? "s" : ""}
                       </span>
@@ -158,7 +94,7 @@ export function RankingResults({
               </div>
             );
           })}
-          {aggregatedResults.rankings.length === 0 && (
+          {result.items.length === 0 && (
             <div className="py-8 text-center">
               <p className="text-gray-500 dark:text-gray-400">
                 No rankings yet

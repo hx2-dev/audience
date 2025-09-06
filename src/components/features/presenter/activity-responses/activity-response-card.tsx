@@ -39,12 +39,21 @@ export function ActivityResponseCard({
     };
   }, [refetchResponses]);
 
-  const formatResponse = (response: unknown): string => {
-    if (typeof response === "string") return response;
-    if (typeof response === "object" && response !== null) {
-      return JSON.stringify(response, null, 2);
+  const formatResponse = (response: 
+    | { activityType: "multiple-choice"; responses: string[] }
+    | { activityType: "ranking"; responses: string[] }
+    | { activityType: "free-response"; responses: string }
+    | { activityType: "timer"; responses?: string }
+  ): string => {
+    switch (response.activityType) {
+      case "multiple-choice":
+      case "ranking":
+        return response.responses.join(", ");
+      case "free-response":
+        return response.responses;
+      case "timer":
+        return response.responses ?? "";
     }
-    return String(response);
   };
 
   const getActivityTypeDisplay = (type: string): string => {
@@ -70,13 +79,10 @@ export function ActivityResponseCard({
       const optionCounts: Record<string, number> = {};
 
       responses.forEach((response) => {
-        const responseData = response.response;
-        if (Array.isArray(responseData)) {
-          responseData.forEach((option: string) => {
+        if (response.activityType === "multiple-choice" && response.response.activityType === "multiple-choice") {
+          response.response.responses.forEach((option: string) => {
             optionCounts[option] = (optionCounts[option] ?? 0) + 1;
           });
-        } else if (typeof responseData === "string") {
-          optionCounts[responseData] = (optionCounts[responseData] ?? 0) + 1;
         }
       });
 
@@ -97,11 +103,13 @@ export function ActivityResponseCard({
       const positionScores: Record<string, number> = {};
 
       responses.forEach((response) => {
-        const ranking = response.response as string[];
-        ranking.forEach((item, position) => {
-          const score = ranking.length - position;
-          positionScores[item] = (positionScores[item] ?? 0) + score;
-        });
+        if (response.activityType === "ranking" && response.response.activityType === "ranking") {
+          const rankingResponses = response.response.responses;
+          rankingResponses.forEach((item: string, position: number) => {
+            const score = rankingResponses.length - position;
+            positionScores[item] = (positionScores[item] ?? 0) + score;
+          });
+        }
       });
 
       const sortedItems = Object.entries(positionScores)

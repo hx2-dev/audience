@@ -12,7 +12,7 @@ import {
 import { ActivityResponseService } from "~/core/features/responses/service";
 import { container } from "tsyringe";
 import { toTrpcError } from "~/core/common/error";
-import type { ActivityResponse } from "~/core/features/responses/types";
+import type { BaseActivityResponse, ActivityResponse } from "~/core/features/responses/types";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 
 const serviceCall = async <T>(
@@ -47,7 +47,7 @@ export const responsesRouter = createTRPCRouter({
 
   submit: protectedProcedure
     .input(createActivityResponseValidator)
-    .mutation<ActivityResponse>(async ({ input, ctx }) => {
+    .mutation<BaseActivityResponse>(async ({ input, ctx }) => {
       return serviceCall((service) =>
         service.submitResponse(input, ctx.session.user.id),
       );
@@ -55,7 +55,7 @@ export const responsesRouter = createTRPCRouter({
 
   update: protectedProcedure
     .input(updateActivityResponseValidator)
-    .mutation<ActivityResponse>(async ({ input, ctx }) => {
+    .mutation<BaseActivityResponse>(async ({ input, ctx }) => {
       return serviceCall((service) =>
         service.updateResponse(input, ctx.session.user.id),
       );

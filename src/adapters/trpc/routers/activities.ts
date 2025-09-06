@@ -13,6 +13,7 @@ import { ActivityService } from "~/core/features/activities/service";
 import { container } from "tsyringe";
 import { toTrpcError } from "~/core/common/error";
 import type { Activity } from "~/core/features/activities/types";
+import type { ActivityResult } from "~/core/features/activities/results";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 
 const serviceCall = async <T>(
@@ -71,6 +72,14 @@ export const activitiesRouter = createTRPCRouter({
     .mutation<void>(({ ctx, input }) => {
       return serviceCall((service) =>
         service.reorder(input.activityIds, ctx.session.user.id),
+      );
+    }),
+
+  getResults: protectedProcedure
+    .input(z.object({ activityId: z.number().int().min(1) }))
+    .query<ActivityResult>(({ ctx, input }) => {
+      return serviceCall((service) =>
+        service.getResults(input.activityId, ctx.session.user.id),
       );
     }),
 });

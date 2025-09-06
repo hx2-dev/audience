@@ -5,7 +5,7 @@ import { type SchemaConnection, db } from "~/adapters/db";
 import { activityResponses } from "~/adapters/db/schema";
 import { singleton } from "tsyringe";
 import type {
-  ActivityResponse,
+  BaseActivityResponse,
   CreateActivityResponse,
   UpdateActivityResponse,
 } from "~/core/features/responses/types";
@@ -20,7 +20,7 @@ export class ActivityResponseQueries {
     response: unknown;
     createdAt: Date;
     updatedAt: Date;
-  }): ActivityResponse {
+  }): BaseActivityResponse {
     return {
       id: response.id,
       activityId: response.activityId,
@@ -37,7 +37,7 @@ export class ActivityResponseQueries {
   }: {
     activityId: number;
     connection?: SchemaConnection;
-  }): TaskEither<Error, ActivityResponse[]> {
+  }): TaskEither<Error, BaseActivityResponse[]> {
     return TE.tryCatch(
       async () => {
         const results = await connection.query.activityResponses.findMany({
@@ -61,7 +61,7 @@ export class ActivityResponseQueries {
     userId: string;
     activityId: number;
     connection?: SchemaConnection;
-  }): TaskEither<Error, ActivityResponse | null> {
+  }): TaskEither<Error, BaseActivityResponse | null> {
     return TE.tryCatch(
       async () => {
         const response = await connection.query.activityResponses.findFirst({
@@ -85,7 +85,7 @@ export class ActivityResponseQueries {
     createResponse: CreateActivityResponse;
     userId: string;
     connection?: SchemaConnection;
-  }): TaskEither<Error, ActivityResponse> {
+  }): TaskEither<Error, BaseActivityResponse> {
     return TE.tryCatch(
       async () => {
         const [response] = await connection
@@ -122,7 +122,7 @@ export class ActivityResponseQueries {
     updateResponse: UpdateActivityResponse;
     userId?: string;
     connection?: SchemaConnection;
-  }): TaskEither<Error, ActivityResponse> {
+  }): TaskEither<Error, BaseActivityResponse> {
     return TE.tryCatch(
       async () => {
         const [response] = await connection
