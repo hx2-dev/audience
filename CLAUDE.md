@@ -389,3 +389,11 @@ export const questionsRouter = createTRPCRouter({
     }),
 });
 ```
+
+## Guidelines
+* Never use `any` in the codebase. It is explicitly forbidden to use `any`.
+* Never use the not-null assertion (`value!`). It is explicitly forbidden to use `!`.
+* Never import `React`. Instead, import the utilities from `react` directly.
+* Casting `as ___` is also forbidden. Use a validator, or type things properly.
+* Run `bun run check` to catch errors after making changes. Preexisting issues
+  should be fixed.

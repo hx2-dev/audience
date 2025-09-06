@@ -1,17 +1,14 @@
 "use client";
 
-import React from "react";
 import { QuestionsTab } from "~/components/features/audience/questions-tab";
 import { AudienceTabsNavigation } from "~/components/features/audience/audience-tabs-navigation";
 import { api } from "~/trpc/react";
 import { useQuestionsSSE } from "~/components/hooks/use-sse-query";
 import { useEvent } from "~/components/providers/event-provider";
-import { useSession } from "next-auth/react";
 
 export function AudienceQuestionsPageClient() {
   // Get event data from context
   const { event, shortId } = useEvent();
-  const { data: session } = useSession();
 
   // Fetch questions for this event
   const questionsQuery = api.questions.getByEventId.useQuery(
@@ -40,11 +37,9 @@ export function AudienceQuestionsPageClient() {
   // Extract data for easier access
   const questions = questionsQuery.data ?? [];
 
-
   return (
     <div>
       <div className="mx-auto max-w-2xl space-y-6">
-
         <AudienceTabsNavigation
           shortId={shortId}
           currentPage="questions"
@@ -54,7 +49,6 @@ export function AudienceQuestionsPageClient() {
         {/* Questions Content */}
         <QuestionsTab
           eventId={event?.id ?? ""}
-          session={session!}
           questions={questions}
           refetchQuestions={questionsQuery.refetch}
         />

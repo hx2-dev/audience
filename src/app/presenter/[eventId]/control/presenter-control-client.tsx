@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { PresenterControlSplit } from "~/components/features/presenter/presenter-control-split";
 import { api } from "~/trpc/react";

@@ -9,7 +9,10 @@ export function addConnection(
   if (!connections.has(shortId)) {
     connections.set(shortId, new Set());
   }
-  connections.get(shortId)!.add(controller);
+  const eventConnections = connections.get(shortId);
+  if (eventConnections) {
+    eventConnections.add(controller);
+  }
   // Connection added for shortId ${shortId}
 }
 

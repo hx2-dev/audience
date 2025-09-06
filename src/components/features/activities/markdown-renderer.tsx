@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { isValidElement, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -161,7 +161,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     pre: ({ children, ...props }) => {
       // Check if the code component returned highlighted content (div)
       // If so, just pass it through. Otherwise, wrap with Pre.
-      if (React.isValidElement(children) && children.type === "div") {
+      if (isValidElement(children) && children.type === "div") {
         return <>{children}</>;
       }
       return <Pre {...props}>{children}</Pre>;

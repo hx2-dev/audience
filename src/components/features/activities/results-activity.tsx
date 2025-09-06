@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import type { z } from "zod";
 import type {
   freeResponseQuestionValidator,
@@ -10,6 +9,7 @@ import type {
 } from "~/core/features/presenter/types";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { api } from "~/trpc/react";
+import { useMemo } from "react";
 
 interface RankingResultItem {
   item: string;
@@ -59,7 +59,7 @@ export function ResultsActivity({ data }: ResultsActivityProps) {
     );
 
   // Calculate aggregated results based on activity type
-  const aggregatedResults = React.useMemo((): AggregatedResults | null => {
+  const aggregatedResults = useMemo((): AggregatedResults | null => {
     if (!responses.length || !activity) return null;
 
     const totalResponses = responses.length;

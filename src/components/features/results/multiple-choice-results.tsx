@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import type { ActivityResponse } from "~/core/features/responses/types";
 
@@ -35,7 +35,7 @@ export function MultipleChoiceResults({
   showSubmissionBanner = false,
 }: MultipleChoiceResultsProps) {
   // Calculate aggregated results
-  const aggregatedResults = React.useMemo((): AggregatedResults => {
+  const aggregatedResults = useMemo((): AggregatedResults => {
     if (!allResponses.length) {
       return {
         optionCounts: {},

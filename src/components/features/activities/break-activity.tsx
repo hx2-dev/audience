@@ -19,7 +19,7 @@ export function BreakActivity({ data }: BreakActivityProps) {
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, (data.duration! * 1000) - elapsed);
+      const remaining = Math.max(0, (data.duration ? data.duration * 1000 : 0) - elapsed);
       setTimeLeft(remaining);
 
       if (remaining === 0) {

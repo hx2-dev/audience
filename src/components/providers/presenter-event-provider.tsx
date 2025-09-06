@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext } from "react";
+import { createContext, useContext } from "react";
 import type { Event } from "~/core/features/events/types";
 import type { Session } from "next-auth";
 

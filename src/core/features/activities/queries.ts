@@ -213,11 +213,14 @@ export class ActivityQueries {
       async () => {
         // Update the order of activities based on their position in the array
         for (let i = 0; i < activityIds.length; i++) {
-          await connection
-            .update(activities)
-            .set({ order: i, updatedBy: userId })
-            .where(and(eq(activities.id, activityIds[i]!), isNull(activities.deleted)))
-            .execute();
+          const activityId = activityIds[i];
+          if (activityId !== undefined) {
+            await connection
+              .update(activities)
+              .set({ order: i, updatedBy: userId })
+              .where(and(eq(activities.id, activityId), isNull(activities.deleted)))
+              .execute();
+          }
         }
       },
       (error) => error as Error,

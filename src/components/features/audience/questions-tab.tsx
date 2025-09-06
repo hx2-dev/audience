@@ -7,7 +7,6 @@ import { Textarea } from "~/components/ui/textarea";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Send } from "lucide-react";
 import { api } from "~/trpc/react";
-import type { Session } from "next-auth";
 import { useSession } from "next-auth/react";
 
 interface Question {
@@ -22,7 +21,6 @@ interface Question {
 
 interface QuestionsTabProps {
   eventId: string;
-  session: Session;
   questions: Question[];
   refetchQuestions: () => void;
 }

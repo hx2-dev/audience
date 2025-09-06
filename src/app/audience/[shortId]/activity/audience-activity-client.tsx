@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { ActivityTab } from "~/components/features/audience/activity-tab";
 import { AudienceTabsNavigation } from "~/components/features/audience/audience-tabs-navigation";
 import { api } from "~/trpc/react";

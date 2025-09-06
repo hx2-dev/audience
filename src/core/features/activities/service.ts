@@ -95,8 +95,8 @@ export class ActivityService {
   reorder(activityIds: number[], userId: string): TaskEither<Error, void> {
     return pipe(
       // Verify user has access to the first activity to check event ownership
-      activityIds.length > 0
-        ? this.getById(activityIds[0]!)
+      activityIds.length > 0 && activityIds[0] !== undefined
+        ? this.getById(activityIds[0])
         : TE.left(new Error("No activities to reorder")),
       TE.flatMap((activity) =>
         pipe(

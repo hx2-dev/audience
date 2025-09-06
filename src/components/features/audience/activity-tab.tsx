@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { createContext, useContext } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { WelcomeActivity } from "~/components/features/activities/welcome-activity";
 import { TimerActivity } from "~/components/features/activities/timer-activity";
@@ -16,14 +16,14 @@ import type { ActivityResponse } from "~/core/features/responses/types";
 import type { PresenterState } from "~/core/features/presenter/types";
 
 // Context for activity data
-const ActivityDataContext = React.createContext<{
+const ActivityDataContext = createContext<{
   userResponse: ActivityResponse | null;
   allResponses: ActivityResponse[];
   refetchData: () => void;
 } | null>(null);
 
 export const useActivityData = () => {
-  const context = React.useContext(ActivityDataContext);
+  const context = useContext(ActivityDataContext);
   return (
     context ?? {
       userResponse: null,

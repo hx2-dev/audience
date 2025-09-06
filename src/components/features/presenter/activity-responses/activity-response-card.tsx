@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
@@ -22,7 +22,7 @@ export function ActivityResponseCard({
     refetch: refetchResponses,
   } = api.responses.getByActivityId.useQuery({ activityId: activity.id });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleResponsesUpdate = () => {
       void refetchResponses();
     };
@@ -63,7 +63,7 @@ export function ActivityResponseCard({
   };
 
   // Calculate aggregated results
-  const aggregatedResults = React.useMemo(() => {
+  const aggregatedResults = useMemo(() => {
     if (!responses.length) return null;
 
     if (activity.type === "multiple-choice") {

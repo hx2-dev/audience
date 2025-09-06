@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { useActivityData } from "~/components/features/audience/activity-tab";
 import { RankingResults } from "~/components/features/results/ranking-results";
-import React from "react";
 
 interface RankingActivityProps {
   data: z.infer<typeof rankingQuestionValidator>;
