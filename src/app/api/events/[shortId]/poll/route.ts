@@ -54,7 +54,7 @@ export function broadcastToPollClients(
         // Check if request is potentially disconnected
         const isStale = now - poll.createdAt > staleThreshold;
         const isAborted = poll.request.signal?.aborted;
-        
+
         if (isAborted || isStale) {
           disconnectedPolls.push(poll);
           return;
@@ -62,13 +62,13 @@ export function broadcastToPollClients(
 
         // Try to resolve with a short timeout
         clearTimeout(poll.timeout);
-        
+
         // Use a Promise.race to avoid hanging on potentially dead connections
         Promise.race([
           Promise.resolve().then(() => poll.resolve(message)),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Resolve timeout")), 100)
-          )
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Resolve timeout")), 1000),
+          ),
         ]).catch(() => {
           // If resolve times out, treat as disconnected
           disconnectedPolls.push(poll);
@@ -138,12 +138,12 @@ export async function GET(
       }
 
       const polls = pendingPolls.get(shortId)!;
-      polls.add({ 
-        resolve, 
-        reject, 
-        timeout, 
+      polls.add({
+        resolve,
+        reject,
+        timeout,
         createdAt: Date.now(),
-        request 
+        request,
       });
     });
 

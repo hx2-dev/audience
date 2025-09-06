@@ -32,6 +32,7 @@ export interface UseEventSSEOptions {
   shortId?: string;
   callbacks?: SSECallbacks;
   enabled?: boolean;
+  onActivity?: () => void; // Called on any polling activity (refresh or no-op)
 }
 
 export interface UseEventSSEReturn {
@@ -44,6 +45,7 @@ export function useEventSSE({
   shortId,
   callbacks = {},
   enabled = true,
+  onActivity,
 }: UseEventSSEOptions): UseEventSSEReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +87,11 @@ export function useEventSSE({
 
           const message: PollMessage = await response.json() as PollMessage;
 
+          // Call onActivity for any response (refresh or no-op)
+          if (onActivity) {
+            onActivity();
+          }
+
           // Handle the poll response
           if (message.type === "refresh" && message.data?.refreshTypes) {
             const refreshTypes = message.data.refreshTypes;
@@ -102,7 +109,7 @@ export function useEventSSE({
               callbacksRef.current.onActivityResponsesRefresh();
             }
           }
-          // For "no-op", we just continue polling
+          // For "no-op", we just continue polling (but onActivity was already called)
 
         } catch (error: unknown) {
           if (error instanceof Error && error.name === 'AbortError') {
@@ -131,7 +138,7 @@ export function useEventSSE({
       }
       setIsConnected(false);
     };
-  }, [shortId, enabled]);
+  }, [shortId, enabled, onActivity]);
 
   return {
     isConnected,

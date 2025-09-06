@@ -88,6 +88,7 @@ export function useMultiSSEQuery(
   }>,
   shortId?: string,
   enabled = true,
+  onActivity?: () => void,
 ): UseEventSSEReturn {
   const queriesRef = useRef(queries);
   queriesRef.current = queries;
@@ -123,5 +124,6 @@ export function useMultiSSEQuery(
     shortId,
     callbacks: callbacks(),
     enabled: enabled && !!shortId,
+    onActivity,
   });
 }

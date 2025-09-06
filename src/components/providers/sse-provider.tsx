@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useCallback, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { useMultiSSEQuery } from "~/components/hooks/use-sse-query";
 
 interface SSEContextValue {
@@ -12,6 +18,8 @@ interface SSEContextValue {
   onQuestionsRefresh: (callback: () => void) => () => void;
   onActivitiesRefresh: (callback: () => void) => () => void;
   onActivityResponsesRefresh: (callback: () => void) => () => void;
+  // Method to reset activity timer (for no-op responses)
+  resetActivityTimer: () => void;
 }
 
 const SSEContext = createContext<SSEContextValue | null>(null);
@@ -36,21 +44,46 @@ export function SSEProvider({ shortId, children }: SSEProviderProps) {
   const activitiesCallbacks = useRef(new Set<() => void>());
   const activityResponsesCallbacks = useRef(new Set<() => void>());
 
+  // Track last activity time for visibility change refresh
+  const lastActivityTime = useRef(Date.now());
+
   // Create callback functions that call all registered callbacks
   const handlePresenterStateRefresh = useCallback(() => {
-    presenterStateCallbacks.current.forEach(callback => callback());
+    presenterStateCallbacks.current.forEach((callback) => callback());
+    lastActivityTime.current = Date.now();
   }, []);
 
   const handleQuestionsRefresh = useCallback(() => {
-    questionsCallbacks.current.forEach(callback => callback());
+    questionsCallbacks.current.forEach((callback) => callback());
+    lastActivityTime.current = Date.now();
   }, []);
 
   const handleActivitiesRefresh = useCallback(() => {
-    activitiesCallbacks.current.forEach(callback => callback());
+    activitiesCallbacks.current.forEach((callback) => callback());
+    lastActivityTime.current = Date.now();
   }, []);
 
   const handleActivityResponsesRefresh = useCallback(() => {
-    activityResponsesCallbacks.current.forEach(callback => callback());
+    activityResponsesCallbacks.current.forEach((callback) => callback());
+    lastActivityTime.current = Date.now();
+  }, []);
+
+  // Function to refresh all data types
+  const refreshAllData = useCallback(() => {
+    handlePresenterStateRefresh();
+    handleQuestionsRefresh();
+    handleActivitiesRefresh();
+    handleActivityResponsesRefresh();
+  }, [
+    handlePresenterStateRefresh,
+    handleQuestionsRefresh,
+    handleActivitiesRefresh,
+    handleActivityResponsesRefresh,
+  ]);
+
+  // Function to reset activity timer (for no-op responses and other activity)
+  const resetActivityTimer = useCallback(() => {
+    lastActivityTime.current = Date.now();
   }, []);
 
   // Single SSE connection for all event types
@@ -75,7 +108,31 @@ export function SSEProvider({ shortId, children }: SSEProviderProps) {
     ],
     shortId,
     !!shortId,
+    resetActivityTimer,
   );
+
+  // Handle visibility change to refresh data after long inactivity
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible/focused
+        const now = Date.now();
+        const timeSinceLastActivity = now - lastActivityTime.current;
+        const timeLimit = 1 * 60 * 1000; // 1 minutes in milliseconds
+
+        if (timeSinceLastActivity > timeLimit) {
+          // It's been more than 3 minutes since last activity, refresh all data
+          refreshAllData();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [refreshAllData]);
 
   // Methods to register/unregister callbacks
   const onPresenterStateRefresh = useCallback((callback: () => void) => {
@@ -106,11 +163,10 @@ export function SSEProvider({ shortId, children }: SSEProviderProps) {
     onQuestionsRefresh,
     onActivitiesRefresh,
     onActivityResponsesRefresh,
+    resetActivityTimer,
   };
 
   return (
-    <SSEContext.Provider value={contextValue}>
-      {children}
-    </SSEContext.Provider>
+    <SSEContext.Provider value={contextValue}>{children}</SSEContext.Provider>
   );
 }

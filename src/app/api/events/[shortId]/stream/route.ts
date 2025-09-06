@@ -53,7 +53,7 @@ export async function GET(
             // Add small delay before removing connection to allow any pending broadcasts
             setTimeout(() => {
               removeConnection(shortId, controller);
-            }, 100);
+            }, 1000);
           }
         }, 30000);
 
@@ -63,7 +63,7 @@ export async function GET(
           // Add small delay before removing connection to allow any pending broadcasts
           setTimeout(() => {
             removeConnection(shortId, controller);
-          }, 100);
+          }, 1000);
         };
       },
     });
