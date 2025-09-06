@@ -79,7 +79,7 @@ import { z } from "zod";
 export const createQuestionValidator = z.object({
   question: z.string().min(1),
   order: z.number().int().min(0),
-  eventId: z.number().int().min(1),
+  eventId: z.uuid(),
 });
 
 export type CreateQuestion = z.infer<typeof createQuestionValidator>;
@@ -102,7 +102,7 @@ export type UpdateQuestion = z.infer<typeof updateQuestionValidator>;
 ```ts
 export const questions = createTable("question", (d) => ({
   id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-  eventId: d.integer().notNull().references(() => events.id),
+  eventId: d.uuid().notNull().references(() => events.id),
   question: d.varchar({ length: 256 }).notNull(),
   order: d.integer().notNull().default(0),
   createdAt: d.timestamp({ withTimezone: true }).default(sql`CURRENT_TIMESTAMP`),
@@ -145,7 +145,7 @@ export class QuestionQueries {
     eventId,
     connection = db,
   }: {
-    eventId: number;
+    eventId: string;
     connection?: SchemaConnection;
   }): TaskEither<Error, Question[]> {
     return TE.tryCatch(
@@ -286,7 +286,7 @@ export class QuestionService {
     private readonly eventService: EventService,
   ) {}
 
-  getQuestionsByEventId(eventId: number): TaskEither<Error, Question[]> {
+  getQuestionsByEventId(eventId: string): TaskEither<Error, Question[]> {
     return this.questionQueries.getQuestionsByEventId({ eventId });
   }
 
@@ -359,7 +359,7 @@ const serviceCall = async <T>(fn: (service: QuestionService) => TaskEither<Error
 
 export const questionsRouter = createTRPCRouter({
   getQuestionsByEventId: publicProcedure
-    .input(z.object({ eventId: z.number() }))
+    .input(z.object({ eventId: z.uuid() }))
     .query(({ input }) => {
       return serviceCall((service) => service.getQuestionsByEventId(input.eventId));
     }),
@@ -373,7 +373,7 @@ export const questionsRouter = createTRPCRouter({
   create: publicProcedure
     .input(z.object({
       question: z.string().min(1),
-      eventId: z.number(),
+      eventId: z.uuid(),
     }))
     .mutation(({ input, ctx }) => {
       return serviceCall((service) => service.create(input, ctx.user.id));
