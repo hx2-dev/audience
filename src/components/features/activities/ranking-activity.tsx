@@ -32,8 +32,9 @@ export function RankingActivity({ data }: RankingActivityProps) {
   useEffect(() => {
     if (userResponse) {
       const responseData = userResponse.response;
-      if (Array.isArray(responseData)) {
-        setRankedItems(responseData);
+      // Handle discriminated union response data
+      if (responseData.activityType === "ranking" && Array.isArray(responseData.responses)) {
+        setRankedItems(responseData.responses);
       }
     } else {
       setRankedItems([]);

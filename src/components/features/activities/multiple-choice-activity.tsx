@@ -34,10 +34,9 @@ export function MultipleChoiceActivity({ data }: MultipleChoiceActivityProps) {
   useEffect(() => {
     if (userResponse) {
       const responseData = userResponse.response;
-      if (Array.isArray(responseData)) {
-        setSelectedOptions(responseData);
-      } else if (typeof responseData === "string") {
-        setSelectedOptions([responseData]);
+      // Handle discriminated union response data
+      if (responseData.activityType === "multiple-choice" && Array.isArray(responseData.responses)) {
+        setSelectedOptions(responseData.responses);
       }
     } else {
       setSelectedOptions([]);

@@ -32,8 +32,9 @@ export function FreeResponseActivity({ data }: FreeResponseActivityProps) {
   useEffect(() => {
     if (userResponse) {
       const responseData = userResponse.response;
-      if (typeof responseData === "string") {
-        setResponse(responseData);
+      // Handle discriminated union response data
+      if (responseData.activityType === "free-response" && typeof responseData.responses === "string") {
+        setResponse(responseData.responses);
       }
     } else {
       setResponse("");
