@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run:*)",
+      "Read(src/**)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:npmjs.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
