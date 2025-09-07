@@ -33,12 +33,12 @@ export default async function PresenterLayout({
   if (!uuidResult.success) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Card className="mx-4 w-full max-w-md backdrop-blur-sm bg-background/80">
+        <Card className="bg-background/80 mx-4 w-full max-w-md backdrop-blur-sm">
           <CardContent className="pt-6 text-center">
-            <h1 className="font-semibold text-destructive">
-              Invalid Event ID
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">The event ID provided is not valid.</p>
+            <h1 className="text-destructive font-semibold">Invalid Event ID</h1>
+            <p className="text-muted-foreground mt-2 text-sm">
+              The event ID provided is not valid.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -56,16 +56,16 @@ export default async function PresenterLayout({
     if (accessResult.left instanceof ForbiddenError) {
       return (
         <div className="flex items-center justify-center py-20">
-          <Card className="mx-4 w-full max-w-md backdrop-blur-sm bg-background/80">
+          <Card className="bg-background/80 mx-4 w-full max-w-md backdrop-blur-sm">
             <CardContent className="pt-6 text-center">
-              <h1 className="text-xl font-semibold text-destructive">
+              <h1 className="text-destructive text-xl font-semibold">
                 Access Denied
               </h1>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-sm">
                 You don&apos;t have permission to access the presenter controls
                 for this event.
               </p>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-xs">
                 Only the event creator can access these controls.
               </p>
             </CardContent>
@@ -77,12 +77,12 @@ export default async function PresenterLayout({
     if (accessResult.left instanceof NotFoundError) {
       return (
         <div className="flex items-center justify-center py-20">
-          <Card className="mx-4 w-full max-w-md backdrop-blur-sm bg-background/80">
+          <Card className="bg-background/80 mx-4 w-full max-w-md backdrop-blur-sm">
             <CardContent className="pt-6 text-center">
-              <h1 className="text-xl font-semibold text-destructive">
+              <h1 className="text-destructive text-xl font-semibold">
                 Event Not Found
               </h1>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-sm">
                 The event you&apos;re looking for doesn&apos;t exist.
               </p>
             </CardContent>
@@ -92,12 +92,13 @@ export default async function PresenterLayout({
     }
 
     // Other errors
+    throw accessResult.left;
     return (
       <div className="flex items-center justify-center py-20">
-        <Card className="mx-4 w-full max-w-md backdrop-blur-sm bg-background/80">
+        <Card className="bg-background/80 mx-4 w-full max-w-md backdrop-blur-sm">
           <CardContent className="pt-6 text-center">
-            <h1 className="text-xl font-semibold text-destructive">Error</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h1 className="text-destructive text-xl font-semibold">Error</h1>
+            <p className="text-muted-foreground mt-2 text-sm">
               An error occurred while accessing this event.
             </p>
           </CardContent>
@@ -108,7 +109,7 @@ export default async function PresenterLayout({
 
   // User has access, provide event data to children
   const event = accessResult.right;
-  
+
   return (
     <PresenterEventProvider event={event} eventId={eventId} session={session}>
       <div className="mx-auto w-full max-w-2xl p-4 sm:p-6 xl:max-w-7xl">
