@@ -48,7 +48,7 @@ jobs:
         run: bun run build
 
       - run: supabase link --project-ref $SUPABASE_PROJECT_ID
-      - run: supabase db push
+      - run: source .env && supabase db push
 
       - name: Deploy to Vercel
         run: |
