@@ -2,7 +2,7 @@ import "~/styles/globals.css";
 
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
-import { SessionProvider } from "next-auth/react";
+import { SupabaseAuthProvider } from "~/components/providers/supabase-auth-provider";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/components/ui/theme-provider";
@@ -49,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="bg-slate-50 dark:bg-slate-900">
-        <SessionProvider>
+        <SupabaseAuthProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -63,14 +63,14 @@ export default function RootLayout({
               {/* Content layer */}
               <div className="relative z-10 flex min-h-screen flex-col">
                 <Toaster />
-                <main className="flex-1">
+                <main className="flex flex-1 flex-col items-center justify-center">
                   <TRPCReactProvider>{children}</TRPCReactProvider>
                 </main>
                 <AppFooter />
               </div>
             </div>
           </ThemeProvider>
-        </SessionProvider>
+        </SupabaseAuthProvider>
       </body>
     </html>
   );

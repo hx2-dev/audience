@@ -3,10 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { PresenterControlSplit } from "~/components/features/presenter/presenter-control-split";
 import { api } from "~/trpc/react";
-import { useMultiSSEQuery } from "~/components/hooks/use-sse-query";
+import { useQuestionsRealtime } from "~/components/hooks/use-questions-realtime";
 import type { ActivityData } from "~/core/features/presenter/types";
 import { PresenterTabsNavigation } from "~/components/features/presenter/presenter-tabs-navigation";
 import { usePresenterEvent } from "~/components/providers/presenter-event-provider";
+import { useEffect } from "react";
 
 export function PresenterControlPageClient() {
   // Get event data from context
@@ -18,24 +19,16 @@ export function PresenterControlPageClient() {
     { enabled: !!eventId },
   );
 
-  // Enhanced refetch functions for custom event dispatching
-  const enhancedQuestionsRefresh = () => {
-    // Dispatch event for navigation to pick up
-    window.dispatchEvent(new CustomEvent("questions-updated"));
-  };
+  // Real-time questions subscription for navigation updates
+  const { questions } = useQuestionsRealtime({
+    eventId,
+    enabled: !!eventId,
+  });
 
-  // SSE connection with automatic query integration
-  const {} = useMultiSSEQuery(
-    [
-      {
-        queryResult: { refetch: enhancedQuestionsRefresh },
-        eventType: "questions",
-      },
-      { queryResult: activitiesQuery, eventType: "activities" },
-    ],
-    event?.shortId,
-    !!event?.shortId,
-  );
+  // Dispatch custom event for navigation count updates
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("questions-updated"));
+  }, [questions.length]);
 
   // Mutations
   const createActivityMutation = api.activities.create.useMutation();
@@ -88,7 +81,7 @@ export function PresenterControlPageClient() {
 
   return (
     <div>
-      <div className="mx-auto max-w-7xl">
+      <div>
 
         <PresenterTabsNavigation eventId={eventId} currentPage="control" />
 

@@ -2,7 +2,7 @@ import { inject, injectable } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import type { Event } from "~/core/features/events/types";
-import { PresenterQueries } from "~/core/features/presenter/queries";
+import { PresenterQueries } from "~/adapters/db/queries/presenter/queries";
 import { EventService } from "~/core/features/events/service";
 import { ForbiddenError } from "~/core/common/error";
 import type {
@@ -10,7 +10,6 @@ import type {
   UpdatePresenterState,
 } from "~/core/features/presenter/types";
 import { pipe } from "fp-ts/lib/function";
-import { broadcastToEvent } from "~/app/api/events/[shortId]/stream/connections";
 
 export const PresenterServiceSymbol = Symbol("PresenterService");
 
@@ -37,27 +36,15 @@ export class PresenterService {
       TE.flatMap((event: Event) =>
         pipe(
           this.presenterQueries.upsert({ updateState }),
-          TE.tap((state: PresenterState) => {
+          TE.tap((_state: PresenterState) => {
             const shortId = event.shortId;
             if (shortId) {
-              return this.broadcastStateChange(shortId, state);
+              return TE.right(void 0); // Broadcasting replaced with Supabase Realtime
             }
             return TE.right(void 0);
           }),
         ),
       ),
-    );
-  }
-
-  private broadcastStateChange(shortId: string, _state: PresenterState) {
-    return TE.tryCatch(
-      async () => {
-        broadcastToEvent(shortId, ["presenter-state"]);
-        console.log(
-          `[Presenter Service] Broadcast completed for shortId: ${shortId}`,
-        );
-      },
-      (error) => error as Error,
     );
   }
 

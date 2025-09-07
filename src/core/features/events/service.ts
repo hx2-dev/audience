@@ -2,7 +2,7 @@ import { inject, singleton } from "tsyringe";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { CreateEvent, Event, UpdateEvent } from "./types";
-import { EventQueries } from "./queries";
+import { EventQueries } from "~/adapters/db/queries/events/queries";
 import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
@@ -71,7 +71,10 @@ export class EventService {
     );
   }
 
-  checkPresenterAccess(eventId: string, userId: string): TaskEither<Error, Event> {
+  checkPresenterAccess(
+    eventId: string,
+    userId: string,
+  ): TaskEither<Error, Event> {
     return pipe(
       this.getById(eventId),
       TE.flatMap(this.checkEventAuthorization(userId)),

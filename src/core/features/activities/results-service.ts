@@ -1,8 +1,8 @@
 import { inject, singleton } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
-import { ActivityQueries } from "~/core/features/activities/queries";
-import { ActivityResponseQueries } from "~/core/features/responses/queries";
+import { ActivityQueries } from "~/adapters/db/queries/activities/queries";
+import { ActivityResponseQueries } from "~/adapters/db/queries/responses/queries";
 import type { Activity } from "~/core/features/activities/types";
 import type { BaseActivityResponse } from "~/core/features/responses/types";
 import {

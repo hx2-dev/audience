@@ -1,7 +1,7 @@
 import { inject, singleton } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
-import { QuestionQueries } from "~/core/features/questions/queries";
+import { QuestionQueries } from "~/adapters/db/queries/questions/queries";
 import { EventService } from "~/core/features/events/service";
 import { ForbiddenError } from "~/core/common/error";
 import type {
@@ -11,7 +11,6 @@ import type {
 } from "~/core/features/questions/types";
 import type { Event } from "~/core/features/events/types";
 import { pipe } from "fp-ts/lib/function";
-import { broadcastToEvent } from "~/app/api/events/[shortId]/stream/connections";
 
 @singleton()
 export class QuestionService {
@@ -50,15 +49,10 @@ export class QuestionService {
   ): TaskEither<Error, PublicQuestion> {
     return pipe(
       this.eventService.getById(createQuestion.eventId),
-      TE.flatMap((event) =>
+      TE.flatMap(() =>
         pipe(
           this.questionQueries.create({ createQuestion, userId, userName }),
           TE.map((q) => this.toPublicQuestion(q)),
-          TE.tap(() =>
-            event.shortId
-              ? this.broadcastQuestionChange(event.shortId)
-              : TE.of(undefined),
-          ),
         ),
       ),
     );
@@ -78,18 +72,13 @@ export class QuestionService {
           TE.map((event) => ({ question, event })),
         ),
       ),
-      TE.flatMap(({ event }) =>
+      TE.flatMap(() =>
         pipe(
           this.questionQueries.update({
             questionId,
             updateQuestion: { isAnswered: true, answer },
             userId,
           }),
-          TE.tap(() =>
-            event.shortId
-              ? this.broadcastQuestionChange(event.shortId)
-              : TE.of(undefined),
-          ),
         ),
       ),
     );
@@ -105,15 +94,8 @@ export class QuestionService {
           TE.map((event) => ({ question, event })),
         ),
       ),
-      TE.flatMap(({ event }) =>
-        pipe(
-          this.questionQueries.delete({ questionId, userId }),
-          TE.tap(() =>
-            event.shortId
-              ? this.broadcastQuestionChange(event.shortId)
-              : TE.of(undefined),
-          ),
-        ),
+      TE.flatMap(() =>
+        pipe(this.questionQueries.delete({ questionId, userId })),
       ),
     );
   }
@@ -125,15 +107,6 @@ export class QuestionService {
         new ForbiddenError(
           `User ${userId} is not authorized to manage questions for event ${event.id}`,
         ),
-    );
-  }
-
-  private broadcastQuestionChange(shortId: string) {
-    return TE.tryCatch(
-      async () => {
-        broadcastToEvent(shortId, ["questions"]);
-      },
-      (error) => error as Error,
     );
   }
 }

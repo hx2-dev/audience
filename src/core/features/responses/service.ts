@@ -2,7 +2,7 @@ import { inject, singleton } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { z } from "zod";
-import { ActivityResponseQueries } from "~/core/features/responses/queries";
+import { ActivityResponseQueries } from "~/adapters/db/queries/responses/queries";
 import { ActivityService } from "~/core/features/activities/service";
 import { EventService } from "~/core/features/events/service";
 import type {
@@ -13,7 +13,6 @@ import type {
 } from "~/core/features/responses/types";
 import { extractUserResponse } from "~/core/features/responses/validators";
 import { pipe } from "fp-ts/lib/function";
-import { broadcastToEvent } from "~/app/api/events/[shortId]/stream/connections";
 
 @singleton()
 export class ActivityResponseService {
@@ -35,27 +34,51 @@ export class ActivityResponseService {
           this.activityService.getById(activityId),
           TE.flatMap((activity) => {
             // Validate activity type at runtime
-            const activityTypeValidator = z.enum(["multiple-choice", "ranking", "free-response", "timer"]);
-            const validatedActivityType = activityTypeValidator.parse(activity.type);
-            
+            const activityTypeValidator = z.enum([
+              "multiple-choice",
+              "ranking",
+              "free-response",
+              "timer",
+            ]);
+            const validatedActivityType = activityTypeValidator.parse(
+              activity.type,
+            );
+
             const typedResponses: ActivityResponse[] = [];
-            
+
             for (const response of responses) {
-              const validationResult = extractUserResponse(validatedActivityType, response.response);
+              const validationResult = extractUserResponse(
+                validatedActivityType,
+                response.response,
+              );
               if (!validationResult.success) {
-                return TE.left(new Error(`Invalid response data: ${validationResult.error}`));
+                return TE.left(
+                  new Error(`Invalid response data: ${validationResult.error}`),
+                );
               }
-              
+
               const responseData = (() => {
                 switch (validatedActivityType) {
                   case "multiple-choice":
-                    return { activityType: "multiple-choice" as const, responses: validationResult.data as string[] };
+                    return {
+                      activityType: "multiple-choice" as const,
+                      responses: validationResult.data as string[],
+                    };
                   case "ranking":
-                    return { activityType: "ranking" as const, responses: validationResult.data as string[] };
+                    return {
+                      activityType: "ranking" as const,
+                      responses: validationResult.data as string[],
+                    };
                   case "free-response":
-                    return { activityType: "free-response" as const, responses: validationResult.data as string };
+                    return {
+                      activityType: "free-response" as const,
+                      responses: validationResult.data as string,
+                    };
                   case "timer":
-                    return { activityType: "timer" as const, responses: validationResult.data as string | undefined };
+                    return {
+                      activityType: "timer" as const,
+                      responses: validationResult.data as string | undefined,
+                    };
                 }
               })();
 
@@ -69,7 +92,7 @@ export class ActivityResponseService {
                 updatedAt: response.updatedAt,
               } satisfies ActivityResponse);
             }
-            
+
             return TE.right(typedResponses);
           }),
         );
@@ -89,27 +112,51 @@ export class ActivityResponseService {
           this.activityService.getById(activityId),
           TE.flatMap((activity) => {
             // Validate activity type at runtime
-            const activityTypeValidator = z.enum(["multiple-choice", "ranking", "free-response", "timer"]);
-            const validatedActivityType = activityTypeValidator.parse(activity.type);
-            
-            const validationResult = extractUserResponse(validatedActivityType, response.response);
+            const activityTypeValidator = z.enum([
+              "multiple-choice",
+              "ranking",
+              "free-response",
+              "timer",
+            ]);
+            const validatedActivityType = activityTypeValidator.parse(
+              activity.type,
+            );
+
+            const validationResult = extractUserResponse(
+              validatedActivityType,
+              response.response,
+            );
             if (!validationResult.success) {
-              return TE.left(new Error(`Invalid response data: ${validationResult.error}`));
+              return TE.left(
+                new Error(`Invalid response data: ${validationResult.error}`),
+              );
             }
-            
+
             const responseData = (() => {
               switch (validatedActivityType) {
                 case "multiple-choice":
-                  return { activityType: "multiple-choice" as const, responses: validationResult.data as string[] };
+                  return {
+                    activityType: "multiple-choice" as const,
+                    responses: validationResult.data as string[],
+                  };
                 case "ranking":
-                  return { activityType: "ranking" as const, responses: validationResult.data as string[] };
+                  return {
+                    activityType: "ranking" as const,
+                    responses: validationResult.data as string[],
+                  };
                 case "free-response":
-                  return { activityType: "free-response" as const, responses: validationResult.data as string };
+                  return {
+                    activityType: "free-response" as const,
+                    responses: validationResult.data as string,
+                  };
                 case "timer":
-                  return { activityType: "timer" as const, responses: validationResult.data as string | undefined };
+                  return {
+                    activityType: "timer" as const,
+                    responses: validationResult.data as string | undefined,
+                  };
               }
             })();
-            
+
             const typedResponse: ActivityResponse = {
               id: response.id,
               activityId: response.activityId,
@@ -119,14 +166,13 @@ export class ActivityResponseService {
               createdAt: response.createdAt,
               updatedAt: response.updatedAt,
             } satisfies ActivityResponse;
-            
+
             return TE.right(typedResponse);
           }),
         );
       }),
     );
   }
-
 
   submitResponse(
     createResponse: CreateActivityResponse,
@@ -136,25 +182,33 @@ export class ActivityResponseService {
       this.activityService.getById(createResponse.activityId),
       TE.flatMap((activity) => {
         // Validate response data using Zod discriminated union
-        const validationResult = extractUserResponse(activity.type, createResponse.response);
+        const validationResult = extractUserResponse(
+          activity.type,
+          createResponse.response,
+        );
         if (!validationResult.success) {
-          return TE.left(new Error(`Invalid response data: ${validationResult.error}`));
+          return TE.left(
+            new Error(`Invalid response data: ${validationResult.error}`),
+          );
         }
-        
+
         // Update the response with validated data
         const validatedResponse = {
           ...createResponse,
-          response: validationResult.data
+          response: validationResult.data,
         };
-        
+
         return pipe(
-          this.responseQueries.create({ createResponse: validatedResponse, userId }),
+          this.responseQueries.create({
+            createResponse: validatedResponse,
+            userId,
+          }),
           TE.flatMap((response) =>
             pipe(
               this.eventService.getById(activity.eventId),
-              TE.flatMap((event) =>
+              TE.flatMap((_event) =>
                 pipe(
-                  this.broadcastResponseUpdate(event.shortId ?? null),
+                  TE.right(void 0), 
                   TE.map(() => response),
                 ),
               ),
@@ -170,16 +224,5 @@ export class ActivityResponseService {
     userId?: string,
   ): TaskEither<Error, BaseActivityResponse> {
     return this.responseQueries.update({ updateResponse, userId });
-  }
-
-  private broadcastResponseUpdate(shortId: string | null) {
-    if (!shortId) return TE.right(void 0);
-
-    return TE.tryCatch(
-      async () => {
-        broadcastToEvent(shortId, ["activity-responses"]);
-      },
-      (error) => error as Error,
-    );
   }
 }

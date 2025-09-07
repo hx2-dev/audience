@@ -7,7 +7,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Send } from "lucide-react";
 import { api } from "~/trpc/react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "~/components/providers/supabase-auth-provider";
 
 interface Question {
   id: number;
@@ -30,7 +30,7 @@ export function QuestionsTab({
   questions,
   refetchQuestions,
 }: QuestionsTabProps) {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [questionText, setQuestionText] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,9 +88,9 @@ export function QuestionsTab({
             </label>
           </div>
 
-          {!isAnonymous && session?.user?.name && (
+          {!isAnonymous && (user?.user_metadata?.full_name ?? user?.user_metadata?.name) && (
             <div className="text-xs text-gray-500">
-              Will show as: {session.user.name}
+              Will show as: {user?.user_metadata?.full_name ?? user?.user_metadata?.name}
             </div>
           )}
 

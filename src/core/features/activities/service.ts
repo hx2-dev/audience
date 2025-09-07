@@ -1,14 +1,14 @@
 import { inject, singleton } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
-import { ActivityQueries } from "~/core/features/activities/queries";
+import { ActivityQueries } from "~/adapters/db/queries/activities/queries";
 import { EventService } from "~/core/features/events/service";
 import {
   PresenterService,
   PresenterServiceSymbol,
 } from "~/core/features/presenter/service";
-import { PresenterQueries } from "~/core/features/presenter/queries";
-import { ActivityResponseQueries } from "~/core/features/responses/queries";
+import { PresenterQueries } from "~/adapters/db/queries/presenter/queries";
+import { ActivityResponseQueries } from "~/adapters/db/queries/responses/queries";
 import { ActivityResultsService } from "~/core/features/activities/results-service";
 import { ForbiddenError } from "~/core/common/error";
 import type {
@@ -20,7 +20,6 @@ import type { Event } from "~/core/features/events/types";
 import type { ActivityData } from "~/core/features/presenter/types";
 import type { ActivityResult } from "~/core/features/activities/results";
 import { pipe } from "fp-ts/lib/function";
-import { broadcastToEvent } from "~/app/api/events/[shortId]/stream/connections";
 
 @singleton()
 export class ActivityService {
@@ -95,7 +94,6 @@ export class ActivityService {
       TE.flatMap(() => this.activityQueries.delete({ id: activityId, userId })),
     );
   }
-
 
   reorder(activityIds: number[], userId: string): TaskEither<Error, void> {
     return pipe(
@@ -230,23 +228,12 @@ export class ActivityService {
           TE.flatMap((event) => {
             const shortId = event.shortId;
             if (shortId) {
-              return this.broadcastActivityResponsesUpdate(shortId);
+              return TE.right(void 0); // Broadcasting replaced with Supabase Realtime
             }
             return TE.right(void 0);
           }),
         );
       }),
-    );
-  }
-
-  private broadcastActivityResponsesUpdate(
-    shortId: string,
-  ): TaskEither<Error, void> {
-    return TE.tryCatch(
-      async () => {
-        broadcastToEvent(shortId, ["activity-responses"]);
-      },
-      (error) => error as Error,
     );
   }
 
@@ -268,22 +255,13 @@ export class ActivityService {
             // Broadcast the state change
             const shortId = event.shortId;
             if (shortId) {
-              return this.broadcastStateChange(shortId);
+              return TE.right(void 0); // Broadcasting replaced with Supabase Realtime
             }
             return TE.right(void 0);
           }),
           TE.map(() => void 0),
         );
       }),
-    );
-  }
-
-  private broadcastStateChange(shortId: string): TaskEither<Error, void> {
-    return TE.tryCatch(
-      async () => {
-        broadcastToEvent(shortId, ["presenter-state"]);
-      },
-      (error) => error as Error,
     );
   }
 
@@ -391,16 +369,21 @@ export class ActivityService {
     }
   }
 
-  getResults(activityId: number, userId: string): TaskEither<Error, ActivityResult> {
+  getResults(
+    activityId: number,
+    userId: string,
+  ): TaskEither<Error, ActivityResult> {
     return pipe(
       this.getById(activityId),
       TE.flatMap((activity) =>
         pipe(
           this.eventService.getById(activity.eventId),
           TE.flatMap(this.checkEventAuthorization(userId)),
-          TE.flatMap(() => this.resultsService.getResultsForActivity(activityId))
-        )
-      )
+          TE.flatMap(() =>
+            this.resultsService.getResultsForActivity(activityId),
+          ),
+        ),
+      ),
     );
   }
 

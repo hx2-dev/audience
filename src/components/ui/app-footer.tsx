@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useAuth } from "~/components/providers/supabase-auth-provider";
 import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { Button } from "~/components/ui/button";
 import { User, LogIn, LogOut } from "lucide-react";
 
 export function AppFooter() {
-  const { data: session, status } = useSession();
+  const { user, loading, signOut } = useAuth();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -18,14 +18,14 @@ export function AppFooter() {
           <div className="flex flex-wrap items-center gap-4">
             <ThemeToggle />
 
-            {status === "loading" ? (
+            {loading ? (
               <div className="text-muted-foreground text-sm">Loading...</div>
-            ) : session ? (
+            ) : user ? (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-muted-foreground flex items-center gap-1 text-sm">
                   <User className="h-4 w-4" />
                   <span className="break-words">
-                    {session.user?.name ?? session.user?.email ?? "User"}
+                    {user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "User"}
                   </span>
                 </span>
                 <Button
@@ -39,15 +39,16 @@ export function AppFooter() {
                 </Button>
               </div>
             ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => signIn()}
-                className="h-8 shrink-0 gap-1 px-2"
-              >
-                <LogIn className="h-4 w-4" />
-                Sign in
-              </Button>
+              <Link href="/auth/signin" className="no-underline">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 shrink-0 gap-1 px-2"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign in
+                </Button>
+              </Link>
             )}
           </div>
 

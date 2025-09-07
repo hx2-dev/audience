@@ -2,12 +2,12 @@
 
 import { createContext, useContext } from "react";
 import type { Event } from "~/core/features/events/types";
-import type { Session } from "next-auth";
+import type { AuthSession } from "~/core/generic/auth/supabase-config";
 
 interface PresenterEventContextType {
   event: Event;
   eventId: string;
-  session: Session;
+  session: AuthSession;
 }
 
 const PresenterEventContext = createContext<PresenterEventContextType | null>(null);
@@ -15,7 +15,7 @@ const PresenterEventContext = createContext<PresenterEventContextType | null>(nu
 interface PresenterEventProviderProps {
   event: Event;
   eventId: string;
-  session: Session;
+  session: AuthSession;
   children: React.ReactNode;
 }
 

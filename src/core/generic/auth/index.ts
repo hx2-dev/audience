@@ -1,24 +1,17 @@
-import NextAuth from "next-auth";
 import { cache } from "react";
+import { getSession, getUser, signOut as supabaseSignOut, createSigninUrl as createSupabaseSigninUrl } from "./supabase-config";
 
-import { authConfig } from "./config";
-
-const { auth: uncachedAuth, handlers, signIn, signOut } = NextAuth(authConfig);
-
-const auth = cache(uncachedAuth);
+// Cache the session for better performance
+const auth = cache(getSession);
 
 /**
- * Creates a signin URL with callbackUrl parameter
+ * Creates a signin URL that displays provider options
  * @param callbackUrl - The URL to redirect to after successful authentication
- * @returns The signin URL with callbackUrl parameter
+ * @returns The signin URL with callback parameter
  */
-export function createSigninUrl(callbackUrl: string): string {
-  const url = new URL(
-    "/api/auth/signin",
-    process.env.NEXTAUTH_URL ?? "http://localhost:3000",
-  );
-  url.searchParams.set("callbackUrl", callbackUrl);
-  return url.toString();
+export function createSigninUrl(callbackUrl?: string): string {
+  return createSupabaseSigninUrl(callbackUrl);
 }
 
-export { auth, handlers, signIn, signOut };
+// Export Supabase auth functions
+export { auth, getUser, supabaseSignOut as signOut };

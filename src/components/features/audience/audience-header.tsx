@@ -7,14 +7,12 @@ interface AudienceHeaderProps {
   event: Event | undefined;
   shortId: string;
   isConnected: boolean;
-  usingPolling: boolean;
 }
 
 export function AudienceHeader({
   event,
   shortId,
   isConnected,
-  usingPolling,
 }: AudienceHeaderProps) {
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -26,11 +24,7 @@ export function AudienceHeader({
           variant={isConnected ? "default" : "secondary"}
           className="shrink-0"
         >
-          {isConnected
-            ? usingPolling
-              ? "Connected (Polling)"
-              : "Connected"
-            : "Connecting..."}
+          {isConnected ? "Connected" : "Connecting..."}
         </Badge>
       </div>
     </div>

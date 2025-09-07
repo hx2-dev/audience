@@ -2,44 +2,29 @@
 
 import { QuestionsTab } from "~/components/features/audience/questions-tab";
 import { AudienceTabsNavigation } from "~/components/features/audience/audience-tabs-navigation";
-import { api } from "~/trpc/react";
-import { useQuestionsSSE } from "~/components/hooks/use-sse-query";
+import { useAudienceRealtime } from "~/components/providers/audience-realtime-provider";
 import { useEvent } from "~/components/providers/event-provider";
+import { useEffect } from "react";
 
 export function AudienceQuestionsPageClient() {
   // Get event data from context
   const { event, shortId } = useEvent();
 
-  // Fetch questions for this event
-  const questionsQuery = api.questions.getByEventId.useQuery(
-    { eventId: event?.id ?? 0 },
-    { enabled: !!event?.id },
-  );
+  // Get questions from unified realtime provider
+  const { questions } = useAudienceRealtime();
 
-  // Enhanced refetch function that also dispatches events for navigation
-  const enhancedQuestionsRefresh = () => {
-    void questionsQuery.refetch();
-    // Also dispatch event for navigation to pick up
+  // Dispatch custom event for navigation count updates
+  useEffect(() => {
     window.dispatchEvent(
       new CustomEvent("questions-updated", {
-        detail: { questionsCount: questionsQuery.data?.length ?? 0 },
+        detail: { questionsCount: questions.length },
       }),
     );
-  };
-
-  // SSE connection with automatic query integration
-  const {} = useQuestionsSSE(
-    { refetch: enhancedQuestionsRefresh },
-    shortId,
-    true,
-  );
-
-  // Extract data for easier access
-  const questions = questionsQuery.data ?? [];
+  }, [questions.length]);
 
   return (
     <div>
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="space-y-6">
         <AudienceTabsNavigation
           shortId={shortId}
           currentPage="questions"
@@ -50,7 +35,7 @@ export function AudienceQuestionsPageClient() {
         <QuestionsTab
           eventId={event?.id ?? ""}
           questions={questions}
-          refetchQuestions={questionsQuery.refetch}
+          refetchQuestions={() => undefined} // No longer needed with realtime
         />
       </div>
     </div>

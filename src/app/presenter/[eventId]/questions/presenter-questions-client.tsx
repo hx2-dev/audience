@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { CheckCircle, Clock, Trash2 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { useQuestionsSSE } from "~/components/hooks/use-sse-query";
+import { useQuestionsRealtime } from "~/components/hooks/use-questions-realtime";
 import type { Question } from "~/core/features/questions/types";
 import { PresenterTabsNavigation } from "~/components/features/presenter/presenter-tabs-navigation";
 import { usePresenterEvent } from "~/components/providers/presenter-event-provider";
@@ -114,23 +114,13 @@ function QuestionCard({ question, onAnswer, onDelete }: QuestionCardProps) {
 
 export function PresenterQuestionsPageClient() {
   // Get event data from context
-  const { event, eventId } = usePresenterEvent();
+  const { eventId } = usePresenterEvent();
 
-  // Fetch questions for this event
-  const questionsQuery = api.questions.getByEventIdForPresenter.useQuery(
-    { eventId },
-    { enabled: !!eventId },
-  );
-
-  // SSE connection with automatic query integration
-  const {} = useQuestionsSSE(
-    questionsQuery,
-    event?.shortId,
-    !!event?.shortId,
-  );
-
-  // Extract data for easier access
-  const questions = questionsQuery.data ?? [];
+  // Real-time questions subscription
+  const { questions } = useQuestionsRealtime({
+    eventId,
+    enabled: !!eventId,
+  });
 
   // Mutations
   const answerQuestionMutation = api.questions.answer.useMutation();
@@ -138,19 +128,17 @@ export function PresenterQuestionsPageClient() {
 
   const handleAnswerQuestion = async (questionId: number, answer: string) => {
     await answerQuestionMutation.mutateAsync({ questionId, answer });
-    await questionsQuery.refetch();
+    // No need to refetch - realtime will update automatically
   };
 
   const handleDeleteQuestion = async (questionId: number) => {
     await deleteQuestionMutation.mutateAsync({ id: questionId });
-    await questionsQuery.refetch();
+    // No need to refetch - realtime will update automatically
   };
-
 
   return (
     <div>
-      <div className="mx-auto max-w-7xl">
-
+      <div>
         <PresenterTabsNavigation eventId={eventId} currentPage="questions" />
 
         <div className="space-y-6">
