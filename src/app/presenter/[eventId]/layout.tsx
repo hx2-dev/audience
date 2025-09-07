@@ -10,6 +10,7 @@ import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import { Card, CardContent } from "~/components/ui/card";
 import { PresenterEventProvider } from "~/components/providers/presenter-event-provider";
 import { PresenterLayoutHeader } from "~/components/features/presenter/presenter-layout-header";
+import * as Sentry from "@sentry/nextjs";
 
 export default async function PresenterLayout({
   children,
@@ -92,14 +93,15 @@ export default async function PresenterLayout({
     }
 
     // Other errors
-    throw accessResult.left;
+    Sentry.captureException(accessResult.left);
     return (
       <div className="flex items-center justify-center py-20">
         <Card className="bg-background/80 mx-4 w-full max-w-md backdrop-blur-sm">
           <CardContent className="pt-6 text-center">
             <h1 className="text-destructive text-xl font-semibold">Error</h1>
             <p className="text-muted-foreground mt-2 text-sm">
-              An error occurred while accessing this event.
+              An error occurred while accessing this event. This has been
+              reported.
             </p>
           </CardContent>
         </Card>
