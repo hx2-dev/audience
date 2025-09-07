@@ -11,14 +11,28 @@ import {
 import { createSupabaseClientClient } from "~/adapters/auth/supabase-client";
 import type { PresenterState } from "~/core/features/presenter/types";
 import type { Question } from "~/core/features/questions/types";
-import { activityDataValidator, presenterStateRowValidator, type PresenterStateRow } from "~/core/features/presenter/types";
-import { questionRowValidator, type QuestionRow } from "~/core/features/questions/types";
+import {
+  activityDataValidator,
+  presenterStateRowValidator,
+  type PresenterStateRow,
+} from "~/core/features/presenter/types";
+import {
+  questionRowValidator,
+  type QuestionRow,
+} from "~/core/features/questions/types";
+import { useAuth } from "./supabase-auth-provider";
 
 function validatePresenterStateRow(data: unknown): PresenterStateRow {
   const result = presenterStateRowValidator.safeParse(data);
   if (!result.success) {
-    console.error("Invalid presenter state row data:", result.error.errors, data);
-    throw new Error(`Invalid presenter state row data: ${result.error.message}`);
+    console.error(
+      "Invalid presenter state row data:",
+      result.error.errors,
+      data,
+    );
+    throw new Error(
+      `Invalid presenter state row data: ${result.error.message}`,
+    );
   }
   return result.data;
 }
@@ -125,6 +139,8 @@ export function AudienceRealtimeProvider({
   const [presenterState, setPresenterState] = useState<PresenterState | null>(
     null,
   );
+  const { loading: authLoading } = useAuth();
+
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -207,6 +223,11 @@ export function AudienceRealtimeProvider({
       return;
     }
 
+    // Wait for auth to be ready before connecting to realtime
+    if (authLoading) {
+      return;
+    }
+
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setupRealtimeSubscription = () => {
@@ -224,7 +245,7 @@ export function AudienceRealtimeProvider({
             lastPresenterUpdateRef.current = Date.now();
             // Restart the backup refresh timer since we got a realtime update
             restartPeriodicRefresh();
-            
+
             if (
               payload.eventType === "INSERT" ||
               payload.eventType === "UPDATE"
@@ -253,7 +274,7 @@ export function AudienceRealtimeProvider({
             lastQuestionsUpdateRef.current = Date.now();
             // Restart the backup refresh timer since we got a realtime update
             restartPeriodicRefresh();
-            
+
             const validatedRow = validateQuestionRow(payload.new);
             const newQuestion = transformQuestionRow(validatedRow);
             if (!newQuestion.deleted) {
@@ -279,7 +300,7 @@ export function AudienceRealtimeProvider({
             lastQuestionsUpdateRef.current = Date.now();
             // Restart the backup refresh timer since we got a realtime update
             restartPeriodicRefresh();
-            
+
             const validatedRow = validateQuestionRow(payload.new);
             const updatedQuestion = transformQuestionRow(validatedRow);
             setQuestions((prev) => {
@@ -305,12 +326,10 @@ export function AudienceRealtimeProvider({
             lastQuestionsUpdateRef.current = Date.now();
             // Restart the backup refresh timer since we got a realtime update
             restartPeriodicRefresh();
-            
+
             const validatedRow = validateQuestionRow(payload.old);
             setQuestions((prev) => {
-              const updated = prev.filter(
-                (q) => q.id !== validatedRow.id,
-              );
+              const updated = prev.filter((q) => q.id !== validatedRow.id);
               questionsCallbacks.current.forEach((callback) =>
                 callback(updated),
               );
@@ -381,7 +400,14 @@ export function AudienceRealtimeProvider({
       }
       setIsConnected(false);
     };
-  }, [eventId, supabase, fetchAllData, fetchPresenterState, fetchQuestions]);
+  }, [
+    eventId,
+    supabase,
+    fetchAllData,
+    fetchPresenterState,
+    fetchQuestions,
+    authLoading,
+  ]);
 
   // Callback registration methods
   const onPresenterStateUpdate = useCallback(

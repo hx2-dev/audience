@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import z from "zod";
 import { createSupabaseClientClient } from "~/adapters/auth/supabase-client";
+import { useAuth } from "~/components/providers/supabase-auth-provider";
 import type { PresenterState } from "~/core/features/presenter/types";
 import {
   activityDataValidator,
@@ -84,10 +85,16 @@ export function usePresenterStateRealtime({
   const [error, setError] = useState<string | null>(null);
   const lastUpdateRef = useRef<number>(Date.now());
   const isTabVisible = useRef<boolean>(true);
+  const { loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (!eventId || !enabled) {
       setIsConnected(false);
+      return;
+    }
+
+    // Wait for auth to be ready before connecting to realtime
+    if (authLoading) {
       return;
     }
 
@@ -218,7 +225,7 @@ export function usePresenterStateRealtime({
 
       setIsConnected(false);
     };
-  }, [eventId, enabled]);
+  }, [eventId, enabled, authLoading]);
 
   return {
     presenterState,
