@@ -21,7 +21,7 @@ AS $$
     FROM "hx2-audience_event" e
     WHERE e."id" = event_id 
     AND (
-      e."creatorId" = auth.uid() OR 
+      e."creatorId" = auth.uid()::uuid OR 
       (e."shortId" IS NOT NULL AND e."deleted" IS NULL)
     )
   );
@@ -38,7 +38,7 @@ AS $$
     SELECT 1 
     FROM "hx2-audience_event" e
     WHERE e."id" = event_id 
-    AND e."creatorId" = auth.uid()
+    AND e."creatorId" = auth.uid()::uuid
   );
 $$;
 
@@ -65,7 +65,7 @@ $$;
 -- Event creators can view, create, update, and delete their own events
 CREATE POLICY "event_creator_full_access" ON "public"."hx2-audience_event"
   FOR ALL
-  USING (auth.uid() = "creatorId");
+  USING (auth.uid()::uuid = "creatorId");
 
 -- Public can view events by shortId (for joining events)
 CREATE POLICY "event_public_read_by_short_id" ON "public"."hx2-audience_event"
@@ -84,7 +84,7 @@ CREATE POLICY "event_public_read_by_short_id" ON "public"."hx2-audience_event"
 CREATE POLICY "activity_creator_full_access" ON "public"."hx2-audience_activity"
   FOR ALL
   USING (
-    auth.uid() IN (
+    auth.uid()::uuid IN (
       SELECT "creatorId" 
       FROM "public"."hx2-audience_event" 
       WHERE "id" = "eventId"
@@ -111,14 +111,14 @@ CREATE POLICY "activity_public_read" ON "public"."hx2-audience_activity"
 CREATE POLICY "question_submitter_access" ON "public"."hx2-audience_question"
   FOR ALL
   USING (
-    auth.uid() = "submitterUserId" AND "deleted" IS NULL
+    auth.uid()::uuid = "submitterUserId" AND "deleted" IS NULL
   );
 
 -- Event creators can view and manage all questions for their events
 CREATE POLICY "question_creator_access" ON "public"."hx2-audience_question"
   FOR ALL
   USING (
-    auth.uid() IN (
+    auth.uid()::uuid IN (
       SELECT "creatorId" 
       FROM "public"."hx2-audience_event" 
       WHERE "id" = "eventId"
@@ -130,7 +130,7 @@ CREATE POLICY "question_authenticated_create" ON "public"."hx2-audience_question
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    auth.uid() IS NOT NULL AND
+    auth.uid()::uuid IS NOT NULL AND
     "eventId" IN (
       SELECT "id" 
       FROM "public"."hx2-audience_event" 
@@ -153,7 +153,7 @@ CREATE POLICY "question_public_read_active_events" ON "public"."hx2-audience_que
 -- Users can manage their own activity responses
 CREATE POLICY "activity_response_user_access" ON "public"."hx2-audience_activity_response"
   FOR ALL
-  USING (auth.uid() = "userId");
+  USING (auth.uid()::uuid = "userId");
 
 -- Event creators can view responses to activities in their events
 CREATE POLICY "activity_response_creator_read" ON "public"."hx2-audience_activity_response"
@@ -163,7 +163,7 @@ CREATE POLICY "activity_response_creator_read" ON "public"."hx2-audience_activit
       SELECT a."id"
       FROM "public"."hx2-audience_activity" a
       JOIN "public"."hx2-audience_event" e ON a."eventId" = e."id"
-      WHERE e."creatorId" = auth.uid()
+      WHERE e."creatorId" = auth.uid()::uuid
     )
   );
 
@@ -175,7 +175,7 @@ CREATE POLICY "activity_response_creator_read" ON "public"."hx2-audience_activit
 CREATE POLICY "presenter_state_creator_access" ON "public"."hx2-audience_presenter_state"
   FOR ALL
   USING (
-    auth.uid() IN (
+    auth.uid()::uuid IN (
       SELECT "creatorId" 
       FROM "public"."hx2-audience_event" 
       WHERE "id" = "eventId"
