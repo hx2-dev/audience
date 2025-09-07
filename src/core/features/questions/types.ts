@@ -38,3 +38,21 @@ export const updateQuestionValidator = z.object({
 });
 
 export type UpdateQuestion = z.infer<typeof updateQuestionValidator>;
+
+// Validator for database row format (dates as strings)
+export const questionRowValidator = z.object({
+  id: z.number().int(),
+  eventId: z.string().uuid(),
+  question: z.string(),
+  submitterName: z.string().nullable(),
+  submitterUserId: z.string().nullable(),
+  isAnonymous: z.boolean(),
+  isAnswered: z.boolean(),
+  answer: z.string().nullable(),
+  createdAt: z.string(), // ISO string from database
+  updatedAt: z.string(), // ISO string from database
+  updatedBy: z.string(),
+  deleted: z.string().nullable(), // ISO string from database or null
+});
+
+export type QuestionRow = z.infer<typeof questionRowValidator>;

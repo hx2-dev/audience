@@ -32,17 +32,9 @@ export function EventJoinForm() {
     setError("");
 
     try {
-      const response = await fetch(`/api/events/${eventId}/stream`, {
-        method: "HEAD",
-      });
-
-      if (response.ok) {
-        router.push(`/audience/${eventId}/activity`);
-      } else if (response.status === 404) {
-        setError("Event not found. Please check the event ID.");
-      } else {
-        setError("Unable to join event. Please try again.");
-      }
+      // Since we removed SSE endpoints, just navigate directly
+      // Event validation will happen on the client side via tRPC
+      router.push(`/audience/${eventId}/activity`);
     } catch {
       setError("Unable to connect. Please check your internet connection.");
     } finally {

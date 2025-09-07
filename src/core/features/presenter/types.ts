@@ -112,3 +112,13 @@ export const updatePresenterStateValidator = z.object({
 export type UpdatePresenterState = z.infer<
   typeof updatePresenterStateValidator
 >;
+
+// Validator for database row format (dates as strings)
+export const presenterStateRowValidator = z.object({
+  eventId: z.string().uuid(),
+  currentPage: z.string(),
+  data: z.unknown().nullable(),
+  updatedAt: z.string(), // ISO string from database
+});
+
+export type PresenterStateRow = z.infer<typeof presenterStateRowValidator>;

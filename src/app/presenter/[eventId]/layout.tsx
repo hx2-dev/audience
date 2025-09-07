@@ -111,7 +111,7 @@ export default async function PresenterLayout({
   
   return (
     <PresenterEventProvider event={event} eventId={eventId} session={session}>
-      <div className="mx-auto max-w-7xl p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-2xl p-4 sm:p-6 xl:max-w-7xl">
         <PresenterLayoutHeader />
         {children}
       </div>

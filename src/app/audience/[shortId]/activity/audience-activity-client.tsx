@@ -3,12 +3,18 @@
 import { ActivityTab } from "~/components/features/audience/activity-tab";
 import { AudienceTabsNavigation } from "~/components/features/audience/audience-tabs-navigation";
 import { api } from "~/trpc/react";
-import { useMultiSSEQuery } from "~/components/hooks/use-sse-query";
+import { useAudienceRealtime } from "~/components/providers/audience-realtime-provider";
 import { useEvent } from "~/components/providers/event-provider";
+import { useEffect, useRef } from "react";
 
 export function AudienceActivityPageClient() {
   // Get event data from context
   const { event, shortId } = useEvent();
+  const lastCombinedRefreshRef = useRef<number>(Date.now());
+  const combinedPeriodicRefreshRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Get realtime data from unified provider
+  const { presenterState, questions, onPresenterStateUpdate } = useAudienceRealtime();
 
   // Get presenter state with user response data in one query
   const combinedDataQuery = api.presenter.getStateWithUserResponse.useQuery(
@@ -18,59 +24,76 @@ export function AudienceActivityPageClient() {
     { enabled: !!event?.id },
   );
 
-  // Fetch questions count for navigation
-  const questionsQuery = api.questions.getByEventId.useQuery(
-    { eventId: event?.id ?? 0 },
-    { enabled: !!event?.id },
-  );
+  // Auto-refetch combined data when presenter state changes (for activity responses)
+  useEffect(() => {
+    const unsubscribe = onPresenterStateUpdate((newPresenterState) => {
+      if (newPresenterState) {
+        void combinedDataQuery.refetch();
+        lastCombinedRefreshRef.current = Date.now();
+        window.dispatchEvent(new CustomEvent("activity-responses-updated"));
+      }
+    });
 
-  // Enhanced refetch functions for custom event dispatching
-  const enhancedCombinedRefresh = () => {
-    void combinedDataQuery.refetch();
-    // Also dispatch event for any additional listeners
-    window.dispatchEvent(new CustomEvent("activity-responses-updated"));
-  };
+    return unsubscribe;
+  }, [onPresenterStateUpdate, combinedDataQuery]);
 
-  const enhancedQuestionsRefresh = () => {
-    // Refetch questions count for navigation
-    void questionsQuery.refetch();
-    // Dispatch event for navigation to pick up
+  // Setup periodic refresh for combined data
+  useEffect(() => {
+    if (!event?.id) return;
+
+    const setupCombinedPeriodicRefresh = () => {
+      const checkAndRefreshCombined = () => {
+        const now = Date.now();
+        const timeSinceLastRefresh = now - lastCombinedRefreshRef.current;
+        
+        // If no combined data refresh for 45 seconds, refresh
+        if (timeSinceLastRefresh > 45000) {
+          void combinedDataQuery.refetch();
+          lastCombinedRefreshRef.current = now;
+        }
+        
+        combinedPeriodicRefreshRef.current = setTimeout(checkAndRefreshCombined, 15000); // Check every 15 seconds
+      };
+      
+      combinedPeriodicRefreshRef.current = setTimeout(checkAndRefreshCombined, 15000);
+    };
+
+    // Handle visibility change for combined data
+    const handleCombinedVisibilityChange = () => {
+      if (!document.hidden) {
+        // Refresh combined data when tab becomes visible
+        void combinedDataQuery.refetch();
+        lastCombinedRefreshRef.current = Date.now();
+      }
+    };
+
+    setupCombinedPeriodicRefresh();
+    document.addEventListener("visibilitychange", handleCombinedVisibilityChange);
+
+    return () => {
+      if (combinedPeriodicRefreshRef.current) {
+        clearTimeout(combinedPeriodicRefreshRef.current);
+      }
+      document.removeEventListener("visibilitychange", handleCombinedVisibilityChange);
+    };
+  }, [event?.id, combinedDataQuery]);
+
+  // Dispatch custom event for navigation count updates
+  useEffect(() => {
     window.dispatchEvent(
       new CustomEvent("questions-updated", {
-        detail: { questionsCount: questionsQuery.data?.length ?? 0 },
+        detail: { questionsCount: questions.length },
       }),
     );
-  };
-
-  // SSE connection with automatic query integration
-  const {} = useMultiSSEQuery(
-    [
-      {
-        queryResult: { refetch: enhancedCombinedRefresh },
-        eventType: "presenter-state",
-      },
-      {
-        queryResult: { refetch: enhancedQuestionsRefresh },
-        eventType: "questions",
-      },
-      {
-        queryResult: { refetch: enhancedCombinedRefresh },
-        eventType: "activity-responses",
-      },
-    ],
-    shortId,
-    true,
-  );
+  }, [questions.length]);
 
   // Extract data for easier access
   const combinedData = combinedDataQuery.data;
-  const presenterState = combinedData?.presenterState;
-  const questions = questionsQuery.data ?? [];
 
 
   return (
     <div>
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="space-y-6">
 
         <AudienceTabsNavigation
           shortId={shortId}

@@ -16,6 +16,7 @@ export default tseslint.config(
       "postcss.config.js",
       "prettier.config.js",
       "next-env.d.ts",
+      "src/adapters/db/database.types.ts",
     ],
   },
   ...compat.extends("next/core-web-vitals"),

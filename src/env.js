@@ -21,6 +21,7 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
     SENTRY_AUTH_TOKEN: z.string().optional(),
+    SUPABASE_SECRET_KEY: z.string(),
   },
 
   /**
@@ -29,7 +30,9 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    NEXT_PUBLIC_SUPABASE_URL: z.url(),
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string(),
+    NEXT_PUBLIC_SITE_URL: z.url().optional(),
   },
 
   /**
@@ -46,6 +49,11 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

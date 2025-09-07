@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -21,6 +21,11 @@ interface PresenterControlProps {
 export function PresenterControlSplit({ eventShortId, onStateUpdate }: PresenterControlProps) {
   const [currentPage, setCurrentPage] = useState("welcome");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [audienceUrl, setAudienceUrl] = useState("");
+
+  useEffect(() => {
+    setAudienceUrl(`${window.location.origin}/audience/${eventShortId}`);
+  }, [eventShortId]);
 
   const handlePageChange = async (newPage: string, data?: ActivityData) => {
     setIsUpdating(true);
@@ -37,8 +42,6 @@ export function PresenterControlSplit({ eventShortId, onStateUpdate }: Presenter
   const handleActivityStart = async (data: ActivityData) => {
     await handlePageChange(data.type, data);
   };
-
-  const audienceUrl = `${window.location.origin}/audience/${eventShortId}`;
 
   return (
     <div className="space-y-6">
