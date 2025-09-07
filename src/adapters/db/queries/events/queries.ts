@@ -44,7 +44,7 @@ export class EventQueries {
           .select("*")
           .eq("id", id)
           .is("deleted", null)
-          .single();
+          .maybeSingle();
 
         if (error) {
           throw new Error(error.message);
@@ -91,7 +91,7 @@ export class EventQueries {
           .select("*")
           .eq("shortId", shortId.toUpperCase())
           .is("deleted", null)
-          .single();
+          .maybeSingle();
 
         if (error) {
           throw new Error(error.message);
