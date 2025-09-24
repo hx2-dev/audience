@@ -9,10 +9,33 @@ import { cn } from "~/lib/utils"
 function InputOTP({
   className,
   containerClassName,
+  onComplete,
   ...props
 }: React.ComponentProps<typeof OTPInput> & {
   containerClassName?: string
+  onComplete?: (value: string) => void
 }) {
+  const handleChange = (value: string) => {
+    // Call the original onChange if provided
+    props.onChange?.(value)
+
+    // Auto-submit when the OTP is complete
+    if (value.length === props.maxLength && onComplete) {
+      onComplete(value)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Call the original onKeyDown if provided
+    props.onKeyDown?.(e)
+
+    // Submit on Enter if the OTP is complete
+    if (e.key === "Enter" && props.value?.length === props.maxLength && onComplete) {
+      e.preventDefault()
+      onComplete(props.value)
+    }
+  }
+
   return (
     <OTPInput
       data-slot="input-otp"
@@ -22,6 +45,8 @@ function InputOTP({
       )}
       className={cn("disabled:cursor-not-allowed", className)}
       {...props}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
     />
   )
 }

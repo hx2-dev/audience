@@ -85,10 +85,6 @@ export function EmailSignInCard({ callbackUrl }: EmailSignInCardProps) {
 
   const handleOTPChange = (value: string) => {
     setOTP(value);
-    // Auto-submit when 6 digits are entered
-    if (value.length === 6 && !isVerifying) {
-      void handleVerifyOTP(value);
-    }
   };
 
   const handleBackToEmail = () => {
@@ -120,6 +116,7 @@ export function EmailSignInCard({ callbackUrl }: EmailSignInCardProps) {
                   value={otp}
                   onChange={handleOTPChange}
                   disabled={isVerifying}
+                  onComplete={() => void handleVerifyOTP()}
                 >
                   {" "}
                   <InputOTPGroup>

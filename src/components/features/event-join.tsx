@@ -57,6 +57,7 @@ export function EventJoinForm() {
             value={eventId}
             onChange={setEventId}
             className="uppercase"
+            onComplete={handleSubmit}
           >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
