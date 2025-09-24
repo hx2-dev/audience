@@ -31,7 +31,7 @@ function validatePresenterStateRow(data: unknown): PresenterStateRow {
   if (!result.success) {
     console.error(
       "Invalid presenter state row data:",
-      result.error.errors,
+      result.error.issues,
       data,
     );
     throw new Error(
@@ -44,7 +44,7 @@ function validatePresenterStateRow(data: unknown): PresenterStateRow {
 function validateQuestionRow(data: unknown): QuestionRow {
   const result = questionRowValidator.safeParse(data);
   if (!result.success) {
-    console.error("Invalid question row data:", result.error.errors, data);
+    console.error("Invalid question row data:", result.error.issues, data);
     throw new Error(`Invalid question row data: ${result.error.message}`);
   }
   return result.data;
@@ -259,12 +259,14 @@ export function AudienceRealtimeProvider({
                 presenterCallbacks.current.forEach((callback) =>
                   callback(newState),
                 );
+                break;
               }
               case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.DELETE: {
                 setPresenterState(null);
                 presenterCallbacks.current.forEach((callback) =>
                   callback(null),
                 );
+                break;
               }
             }
           },

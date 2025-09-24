@@ -14,7 +14,7 @@ export function AudienceActivityPageClient() {
   const combinedPeriodicRefreshRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get realtime data from unified provider
-  const { presenterState, questions, onPresenterStateUpdate } = useAudienceRealtime();
+  const { questions, onPresenterStateUpdate } = useAudienceRealtime();
 
   // Get presenter state with user response data in one query
   const combinedDataQuery = api.presenter.getStateWithUserResponse.useQuery(
@@ -26,12 +26,12 @@ export function AudienceActivityPageClient() {
 
   // Auto-refetch combined data when presenter state changes (for activity responses)
   useEffect(() => {
-    const unsubscribe = onPresenterStateUpdate((newPresenterState) => {
-      if (newPresenterState) {
-        void combinedDataQuery.refetch();
-        lastCombinedRefreshRef.current = Date.now();
-        window.dispatchEvent(new CustomEvent("activity-responses-updated"));
-      }
+    const unsubscribe = onPresenterStateUpdate(() => {
+      // Always refetch when presenter state changes, regardless of the new value
+      // This ensures we get the latest state from the database
+      void combinedDataQuery.refetch();
+      lastCombinedRefreshRef.current = Date.now();
+      window.dispatchEvent(new CustomEvent("activity-responses-updated"));
     });
 
     return unsubscribe;
@@ -101,10 +101,10 @@ export function AudienceActivityPageClient() {
           questionsCount={questions.length}
         />
 
-        {/* Activity Content */}
-        {presenterState ? (
+        {/* Activity Content - Use query data as source of truth */}
+        {combinedData?.presenterState ? (
           <ActivityTab
-            presenterState={presenterState}
+            presenterState={combinedData.presenterState}
             userResponse={combinedData?.userResponse ?? null}
             allResponses={combinedData?.allResponses ?? []}
             refetchData={combinedDataQuery.refetch}
