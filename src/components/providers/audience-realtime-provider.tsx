@@ -116,6 +116,8 @@ interface AudienceRealtimeContextValue {
     callback: (state: PresenterState | null) => void,
   ) => () => void;
   onQuestionsUpdate: (callback: (questions: Question[]) => void) => () => void;
+  // Manual refetch functions
+  refetchQuestions: () => Promise<void>;
 }
 
 const AudienceRealtimeContext =
@@ -290,7 +292,10 @@ export function AudienceRealtimeProvider({
                 const newQuestion = transformQuestionRow(validatedRow);
                 if (!newQuestion.deleted) {
                   setQuestions((prev) => {
-                    const updated = [...prev, newQuestion];
+                    // Add new question and sort by createdAt ascending
+                    const updated = [...prev, newQuestion].sort(
+                      (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+                    );
                     questionsCallbacks.current.forEach((callback) =>
                       callback(updated),
                     );
@@ -432,6 +437,7 @@ export function AudienceRealtimeProvider({
     error,
     onPresenterStateUpdate,
     onQuestionsUpdate,
+    refetchQuestions: fetchQuestions,
   };
 
   return (

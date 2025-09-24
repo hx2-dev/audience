@@ -22,7 +22,7 @@ interface Question {
 interface QuestionsTabProps {
   eventId: string;
   questions: Question[];
-  refetchQuestions: () => void;
+  refetchQuestions: () => Promise<void>;
 }
 
 export function QuestionsTab({
@@ -51,8 +51,8 @@ export function QuestionsTab({
       // Reset form
       setQuestionText("");
 
-      // Refresh questions (SSE should handle this automatically, but keep as backup)
-      void refetchQuestions();
+      // Force refresh questions to immediately show the user's new question
+      await refetchQuestions();
     } catch (error) {
       console.error("Failed to submit question:", error);
     } finally {

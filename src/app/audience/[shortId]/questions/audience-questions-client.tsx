@@ -11,7 +11,7 @@ export function AudienceQuestionsPageClient() {
   const { event, shortId } = useEvent();
 
   // Get questions from unified realtime provider
-  const { questions } = useAudienceRealtime();
+  const { questions, refetchQuestions } = useAudienceRealtime();
 
   // Dispatch custom event for navigation count updates
   useEffect(() => {
@@ -35,7 +35,7 @@ export function AudienceQuestionsPageClient() {
         <QuestionsTab
           eventId={event?.id ?? ""}
           questions={questions}
-          refetchQuestions={() => undefined} // No longer needed with realtime
+          refetchQuestions={refetchQuestions}
         />
       </div>
     </div>
