@@ -21,6 +21,10 @@ import {
   type QuestionRow,
 } from "~/core/features/questions/types";
 import { useAuth } from "./supabase-auth-provider";
+import {
+  REALTIME_POSTGRES_CHANGES_LISTEN_EVENT,
+  REALTIME_SUBSCRIBE_STATES,
+} from "@supabase/supabase-js";
 
 function validatePresenterStateRow(data: unknown): PresenterStateRow {
   const result = presenterStateRowValidator.safeParse(data);
@@ -236,7 +240,7 @@ export function AudienceRealtimeProvider({
         .on(
           "postgres_changes",
           {
-            event: "*",
+            event: REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.ALL,
             schema: "public",
             table: "hx2-audience_presenter_state",
             filter: `eventId=eq.${eventId}`,
@@ -246,52 +250,29 @@ export function AudienceRealtimeProvider({
             // Restart the backup refresh timer since we got a realtime update
             restartPeriodicRefresh();
 
-            if (
-              payload.eventType === "INSERT" ||
-              payload.eventType === "UPDATE"
-            ) {
-              const validatedRow = validatePresenterStateRow(payload.new);
-              const newState = transformPresenterStateRow(validatedRow);
-              setPresenterState(newState);
-              presenterCallbacks.current.forEach((callback) =>
-                callback(newState),
-              );
-            } else if (payload.eventType === "DELETE") {
-              setPresenterState(null);
-              presenterCallbacks.current.forEach((callback) => callback(null));
-            }
-          },
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "hx2-audience_question",
-            filter: `eventId=eq.${eventId}`,
-          },
-          (payload) => {
-            lastQuestionsUpdateRef.current = Date.now();
-            // Restart the backup refresh timer since we got a realtime update
-            restartPeriodicRefresh();
-
-            const validatedRow = validateQuestionRow(payload.new);
-            const newQuestion = transformQuestionRow(validatedRow);
-            if (!newQuestion.deleted) {
-              setQuestions((prev) => {
-                const updated = [...prev, newQuestion];
-                questionsCallbacks.current.forEach((callback) =>
-                  callback(updated),
+            switch (payload.eventType) {
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.INSERT:
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.UPDATE: {
+                const validatedRow = validatePresenterStateRow(payload.new);
+                const newState = transformPresenterStateRow(validatedRow);
+                setPresenterState(newState);
+                presenterCallbacks.current.forEach((callback) =>
+                  callback(newState),
                 );
-                return updated;
-              });
+              }
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.DELETE: {
+                setPresenterState(null);
+                presenterCallbacks.current.forEach((callback) =>
+                  callback(null),
+                );
+              }
             }
           },
         )
         .on(
           "postgres_changes",
           {
-            event: "UPDATE",
+            event: REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.ALL,
             schema: "public",
             table: "hx2-audience_question",
             filter: `eventId=eq.${eventId}`,
@@ -301,51 +282,67 @@ export function AudienceRealtimeProvider({
             // Restart the backup refresh timer since we got a realtime update
             restartPeriodicRefresh();
 
-            const validatedRow = validateQuestionRow(payload.new);
-            const updatedQuestion = transformQuestionRow(validatedRow);
-            setQuestions((prev) => {
-              const updated = prev
-                .map((q) => (q.id === updatedQuestion.id ? updatedQuestion : q))
-                .filter((q) => !q.deleted);
-              questionsCallbacks.current.forEach((callback) =>
-                callback(updated),
-              );
-              return updated;
-            });
-          },
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "DELETE",
-            schema: "public",
-            table: "hx2-audience_question",
-            filter: `eventId=eq.${eventId}`,
-          },
-          (payload) => {
-            lastQuestionsUpdateRef.current = Date.now();
-            // Restart the backup refresh timer since we got a realtime update
-            restartPeriodicRefresh();
+            switch (payload.eventType) {
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.INSERT: {
+                const validatedRow = validateQuestionRow(payload.new);
+                const newQuestion = transformQuestionRow(validatedRow);
+                if (!newQuestion.deleted) {
+                  setQuestions((prev) => {
+                    const updated = [...prev, newQuestion];
+                    questionsCallbacks.current.forEach((callback) =>
+                      callback(updated),
+                    );
+                    return updated;
+                  });
+                }
+                break;
+              }
 
-            const validatedRow = validateQuestionRow(payload.old);
-            setQuestions((prev) => {
-              const updated = prev.filter((q) => q.id !== validatedRow.id);
-              questionsCallbacks.current.forEach((callback) =>
-                callback(updated),
-              );
-              return updated;
-            });
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.UPDATE: {
+                const validatedRow = validateQuestionRow(payload.new);
+                const updatedQuestion = transformQuestionRow(validatedRow);
+                setQuestions((prev) => {
+                  const updated = prev
+                    .map((q) =>
+                      q.id === updatedQuestion.id ? updatedQuestion : q,
+                    )
+                    .filter((q) => !q.deleted);
+                  questionsCallbacks.current.forEach((callback) =>
+                    callback(updated),
+                  );
+                  return updated;
+                });
+                break;
+              }
+
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.DELETE: {
+                const validatedRow = validateQuestionRow(payload.old);
+                setQuestions((prev) => {
+                  const updated = prev.filter((q) => q.id !== validatedRow.id);
+                  questionsCallbacks.current.forEach((callback) =>
+                    callback(updated),
+                  );
+                  return updated;
+                });
+                break;
+              }
+            }
           },
         )
-        .subscribe((status: string) => {
-          if (status === "SUBSCRIBED") {
-            setIsConnected(true);
-            setError(null);
-          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            setIsConnected(false);
-            setError("Real-time connection failed");
-          } else if (status === "CLOSED") {
-            setIsConnected(false);
+        .subscribe((status: REALTIME_SUBSCRIBE_STATES) => {
+          switch (status) {
+            case REALTIME_SUBSCRIBE_STATES.SUBSCRIBED:
+              setIsConnected(true);
+              setError(null);
+              break;
+            case REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR:
+            case REALTIME_SUBSCRIBE_STATES.TIMED_OUT:
+              setIsConnected(false);
+              setError("Real-time connection failed");
+              break;
+            case REALTIME_SUBSCRIBE_STATES.CLOSED:
+              setIsConnected(false);
+              break;
           }
         });
 

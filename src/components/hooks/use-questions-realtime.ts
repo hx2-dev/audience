@@ -1,3 +1,7 @@
+import {
+  REALTIME_POSTGRES_CHANGES_LISTEN_EVENT,
+  REALTIME_SUBSCRIBE_STATES,
+} from "@supabase/supabase-js";
 import { useEffect, useState, useRef } from "react";
 import z from "zod";
 import { createSupabaseClientClient } from "~/adapters/auth/supabase-client";
@@ -59,6 +63,22 @@ export function useQuestionsRealtime({
   const isTabVisible = useRef<boolean>(true);
 
   useEffect(() => {
+    // @ts-expect-error: TS7015 -- creating a new global
+    // eslint-disable-next-line @typescript-eslint/dot-notation -- Creating a new global
+    window["questions"] = {
+      getQuestions: () => {
+        return questions;
+      },
+      getIsConnected: () => {
+        return isConnected;
+      },
+      getError: () => {
+        return error;
+      },
+    };
+  }, [questions, isConnected, error]);
+
+  useEffect(() => {
     if (!eventId || !enabled) {
       setIsConnected(false);
       return;
@@ -99,7 +119,7 @@ export function useQuestionsRealtime({
         .on(
           "postgres_changes",
           {
-            event: "INSERT",
+            event: "*",
             schema: "public",
             table: "hx2-audience_question",
             filter: `eventId=eq.${eventId}`,
@@ -108,63 +128,51 @@ export function useQuestionsRealtime({
             lastUpdateRef.current = Date.now();
             // Restart the backup refresh timer since we got a realtime update
             restartPeriodicRefresh();
-            
-            const validatedRow = validateQuestionRow(payload.new);
-            const newQuestion = transformQuestionRow(validatedRow);
-            if (!newQuestion.deleted) {
-              setQuestions((prev) => [...prev, newQuestion]);
+            switch (payload.eventType) {
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.DELETE: {
+                const validatedRow = validateQuestionRow(payload.old);
+                setQuestions((prev) =>
+                  prev.filter((q) => q.id !== validatedRow.id),
+                );
+                break;
+              }
+
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.UPDATE: {
+                const validatedRow = validateQuestionRow(payload.new);
+                const updatedQuestion = transformQuestionRow(validatedRow);
+                setQuestions((prev) =>
+                  prev
+                    .map((q) =>
+                      q.id === updatedQuestion.id ? updatedQuestion : q,
+                    )
+                    .filter((q) => !q.deleted),
+                );
+                break;
+              }
+
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.INSERT: {
+                const validatedRow = validateQuestionRow(payload.new);
+                const newQuestion = transformQuestionRow(validatedRow);
+                if (!newQuestion.deleted) {
+                  setQuestions((prev) => [...prev, newQuestion]);
+                }
+                break;
+              }
             }
           },
         )
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "hx2-audience_question",
-            filter: `eventId=eq.${eventId}`,
-          },
-          (payload) => {
-            lastUpdateRef.current = Date.now();
-            // Restart the backup refresh timer since we got a realtime update
-            restartPeriodicRefresh();
-            
-            const validatedRow = validateQuestionRow(payload.new);
-            const updatedQuestion = transformQuestionRow(validatedRow);
-            setQuestions((prev) =>
-              prev
-                .map((q) => (q.id === updatedQuestion.id ? updatedQuestion : q))
-                .filter((q) => !q.deleted),
-            );
-          },
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "DELETE",
-            schema: "public",
-            table: "hx2-audience_question",
-            filter: `eventId=eq.${eventId}`,
-          },
-          (payload) => {
-            lastUpdateRef.current = Date.now();
-            // Restart the backup refresh timer since we got a realtime update
-            restartPeriodicRefresh();
-            
-            const validatedRow = validateQuestionRow(payload.old);
-            setQuestions((prev) =>
-              prev.filter((q) => q.id !== validatedRow.id),
-            );
-          },
-        )
-        .subscribe((status: string) => {
-          if (status === "SUBSCRIBED") {
+        .subscribe((status: REALTIME_SUBSCRIBE_STATES) => {
+          console.log("questions realtime status", status);
+          if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
             setIsConnected(true);
             setError(null);
-          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          } else if (
+            status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
+            status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT
+          ) {
             setIsConnected(false);
             setError("Real-time connection failed");
-          } else if (status === "CLOSED") {
+          } else if (status === REALTIME_SUBSCRIBE_STATES.CLOSED) {
             setIsConnected(false);
           }
         });

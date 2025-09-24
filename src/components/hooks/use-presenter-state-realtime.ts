@@ -1,3 +1,7 @@
+import {
+  REALTIME_POSTGRES_CHANGES_LISTEN_EVENT,
+  REALTIME_SUBSCRIBE_STATES,
+} from "@supabase/supabase-js";
 import { useEffect, useState, useRef } from "react";
 import z from "zod";
 import { createSupabaseClientClient } from "~/adapters/auth/supabase-client";
@@ -133,7 +137,7 @@ export function usePresenterStateRealtime({
         .on(
           "postgres_changes",
           {
-            event: "*",
+            event: REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.ALL,
             schema: "public",
             table: "hx2-audience_presenter_state",
             filter: `eventId=eq.${eventId}`,
@@ -142,27 +146,35 @@ export function usePresenterStateRealtime({
             lastUpdateRef.current = Date.now();
             // Restart the backup refresh timer since we got a realtime update
             restartPeriodicRefresh();
-            
-            if (
-              payload.eventType === "INSERT" ||
-              payload.eventType === "UPDATE"
-            ) {
-              const validatedRow = validatePresenterStateRow(payload.new);
-              setPresenterState(transformPresenterStateRow(validatedRow));
-            } else if (payload.eventType === "DELETE") {
-              setPresenterState(null);
+
+            switch (payload.eventType) {
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.INSERT:
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.UPDATE: {
+                const validatedRow = validatePresenterStateRow(payload.new);
+                setPresenterState(transformPresenterStateRow(validatedRow));
+                break;
+              }
+              case REALTIME_POSTGRES_CHANGES_LISTEN_EVENT.DELETE: {
+                setPresenterState(null);
+                break;
+              }
             }
           },
         )
-        .subscribe((status: string) => {
-          if (status === "SUBSCRIBED") {
-            setIsConnected(true);
-            setError(null);
-          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            setIsConnected(false);
-            setError("Real-time connection failed");
-          } else if (status === "CLOSED") {
-            setIsConnected(false);
+        .subscribe((status: REALTIME_SUBSCRIBE_STATES) => {
+          switch (status) {
+            case REALTIME_SUBSCRIBE_STATES.SUBSCRIBED:
+              setIsConnected(true);
+              setError(null);
+              break;
+            case REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR:
+            case REALTIME_SUBSCRIBE_STATES.TIMED_OUT:
+              setIsConnected(false);
+              setError("Real-time connection failed");
+              break;
+            case REALTIME_SUBSCRIBE_STATES.CLOSED:
+              setIsConnected(false);
+              break;
           }
         });
 
