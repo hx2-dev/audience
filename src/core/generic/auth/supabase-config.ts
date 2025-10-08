@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "~/adapters/auth/supabase-server";
+import { createSupabaseServerClient } from "~/core/adapters/auth/supabase-server";
 import type { User } from "@supabase/supabase-js";
 
 export interface AuthSession {
@@ -12,7 +12,7 @@ export interface AuthSession {
 
 export async function getSession(): Promise<AuthSession | null> {
   const supabase = await createSupabaseServerClient();
-  
+
   const {
     data: { user },
     error,
@@ -26,15 +26,21 @@ export async function getSession(): Promise<AuthSession | null> {
     user: {
       id: user.id,
       email: user.email ?? "",
-      name: (user.user_metadata?.full_name as string | undefined) ?? (user.user_metadata?.name as string | undefined) ?? null,
-      image: (user.user_metadata?.avatar_url as string | undefined) ?? (user.user_metadata?.picture as string | undefined) ?? null,
+      name:
+        (user.user_metadata?.full_name as string | undefined) ??
+        (user.user_metadata?.name as string | undefined) ??
+        null,
+      image:
+        (user.user_metadata?.avatar_url as string | undefined) ??
+        (user.user_metadata?.picture as string | undefined) ??
+        null,
     },
   };
 }
 
 export async function getUser(): Promise<User | null> {
   const supabase = await createSupabaseServerClient();
-  
+
   const {
     data: { user },
     error,
@@ -54,10 +60,10 @@ export async function signOut() {
 
 export function createSigninUrl(callbackUrl?: string): string {
   const baseUrl = "/auth/signin";
-  
+
   if (!callbackUrl) {
     return baseUrl;
   }
-  
+
   return `${baseUrl}?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 }

@@ -4,7 +4,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
-} from "~/adapters/trpc/trpc";
+} from "~/core/adapters/trpc/trpc";
 import { createQuestionValidator } from "~/core/features/questions/types";
 import { QuestionService } from "~/core/features/questions/service";
 import { container } from "tsyringe";

@@ -1,10 +1,13 @@
 import "reflect-metadata";
-import { eventRouter } from "~/adapters/trpc/routers/event";
-import { presenterRouter } from "~/adapters/trpc/routers/presenter";
-import { activitiesRouter } from "~/adapters/trpc/routers/activities";
-import { responsesRouter } from "~/adapters/trpc/routers/responses";
-import { questionsRouter } from "~/adapters/trpc/routers/questions";
-import { createCallerFactory, createTRPCRouter } from "~/adapters/trpc/trpc";
+import { eventRouter } from "~/core/adapters/trpc/routers/event";
+import { presenterRouter } from "~/core/adapters/trpc/routers/presenter";
+import { activitiesRouter } from "~/core/adapters/trpc/routers/activities";
+import { responsesRouter } from "~/core/adapters/trpc/routers/responses";
+import { questionsRouter } from "~/core/adapters/trpc/routers/questions";
+import {
+  createCallerFactory,
+  createTRPCRouter,
+} from "~/core/adapters/trpc/trpc";
 
 /**
  * This is the primary router for your server.

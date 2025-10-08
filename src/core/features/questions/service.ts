@@ -1,7 +1,7 @@
 import { inject, singleton } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
-import { QuestionQueries } from "~/adapters/db/queries/questions/queries";
+import { QuestionQueries } from "./adapters/queries";
 import { EventService } from "~/core/features/events/service";
 import { ForbiddenError } from "~/core/common/error";
 import type {

@@ -1,8 +1,12 @@
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { singleton } from "tsyringe";
-import { supabaseServiceClient } from "~/adapters/db/supabase";
-import type { Tables, TablesInsert, Json } from "~/adapters/db/database.types";
+import { supabaseServiceClient } from "~/core/adapters/db/supabase";
+import type {
+  Tables,
+  TablesInsert,
+  Json,
+} from "~/core/adapters/db/database.types";
 import type {
   BaseActivityResponse,
   CreateActivityResponse,

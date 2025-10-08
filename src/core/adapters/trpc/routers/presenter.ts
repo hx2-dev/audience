@@ -4,7 +4,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
-} from "~/adapters/trpc/trpc";
+} from "~/core/adapters/trpc/trpc";
 import { updatePresenterStateValidator } from "~/core/features/presenter/types";
 import {
   type PresenterService,

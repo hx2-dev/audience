@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "~/adapters/auth/supabase-server";
+import { createSupabaseServerClient } from "~/core/adapters/auth/supabase-server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -6,16 +6,16 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
   const error_description = searchParams.get("error_description");
-  const redirectTo = searchParams.get("redirectTo") ?? searchParams.get("next") ?? "/";
+  const redirectTo =
+    searchParams.get("redirectTo") ?? searchParams.get("next") ?? "/";
   const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
 
   // Handle OAuth errors
   if (error) {
-    const errorParam = error === "access_denied" 
-      ? "OAuthSignin" 
-      : error_description ?? error;
+    const errorParam =
+      error === "access_denied" ? "OAuthSignin" : (error_description ?? error);
     const redirectUrl = `/auth/signin?error=${encodeURIComponent(errorParam)}`;
-    
+
     if (forwardedHost) {
       return NextResponse.redirect(`https://${forwardedHost}${redirectUrl}`);
     } else {

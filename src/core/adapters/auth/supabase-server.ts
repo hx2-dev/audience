@@ -2,7 +2,7 @@ import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import type { Database } from "~/adapters/db/database.types";
+import type { Database } from "~/core/adapters/db/database.types";
 import { env } from "~/env";
 
 export async function createSupabaseServerClient() {

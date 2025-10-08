@@ -11,7 +11,7 @@ import {
   InputOTPSlot,
 } from "~/components/ui/input-otp";
 import { Mail, Loader2 } from "lucide-react";
-import { createSupabaseClientClient } from "~/adapters/auth/supabase-client";
+import { createSupabaseClientClient } from "~/core/adapters/auth/supabase-client";
 
 interface EmailSignInCardProps {
   callbackUrl?: string;

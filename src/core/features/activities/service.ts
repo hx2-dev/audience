@@ -1,14 +1,14 @@
 import { inject, singleton } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
-import { ActivityQueries } from "~/adapters/db/queries/activities/queries";
+import { ActivityQueries } from "./adapters/queries";
 import { EventService } from "~/core/features/events/service";
 import {
   PresenterService,
   PresenterServiceSymbol,
 } from "~/core/features/presenter/service";
-import { PresenterQueries } from "~/adapters/db/queries/presenter/queries";
-import { ActivityResponseQueries } from "~/adapters/db/queries/responses/queries";
+import { PresenterQueries } from "../presenter/adapters/queries";
+import { ActivityResponseQueries } from "../responses/adapters/queries";
 import { ActivityResultsService } from "~/core/features/activities/results-service";
 import { ForbiddenError } from "~/core/common/error";
 import type {

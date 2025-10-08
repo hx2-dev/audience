@@ -4,7 +4,7 @@ import {
 } from "@supabase/supabase-js";
 import { useEffect, useState, useRef } from "react";
 import z from "zod";
-import { createSupabaseClientClient } from "~/adapters/auth/supabase-client";
+import { createSupabaseClientClient } from "~/core/adapters/auth/supabase-client";
 import { useAuth } from "~/components/providers/supabase-auth-provider";
 import type { PresenterState } from "~/core/features/presenter/types";
 import {

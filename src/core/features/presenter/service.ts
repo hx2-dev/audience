@@ -2,7 +2,7 @@ import { inject, injectable } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import type { Event } from "~/core/features/events/types";
-import { PresenterQueries } from "~/adapters/db/queries/presenter/queries";
+import { PresenterQueries } from "./adapters/queries";
 import { EventService } from "~/core/features/events/service";
 import { ForbiddenError } from "~/core/common/error";
 import type {

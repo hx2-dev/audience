@@ -8,7 +8,7 @@ import {
   useRef,
   useCallback,
 } from "react";
-import { createSupabaseClientClient } from "~/adapters/auth/supabase-client";
+import { createSupabaseClientClient } from "~/core/adapters/auth/supabase-client";
 import type { PresenterState } from "~/core/features/presenter/types";
 import type { Question } from "~/core/features/questions/types";
 import {
@@ -294,7 +294,7 @@ export function AudienceRealtimeProvider({
                   setQuestions((prev) => {
                     // Add new question and sort by createdAt ascending
                     const updated = [...prev, newQuestion].sort(
-                      (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+                      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
                     );
                     questionsCallbacks.current.forEach((callback) =>
                       callback(updated),

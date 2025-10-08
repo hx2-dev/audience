@@ -2,7 +2,7 @@ import { inject, singleton } from "tsyringe";
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { z } from "zod";
-import { ActivityResponseQueries } from "~/adapters/db/queries/responses/queries";
+import { ActivityResponseQueries } from "./adapters/queries";
 import { ActivityService } from "~/core/features/activities/service";
 import { EventService } from "~/core/features/events/service";
 import type {

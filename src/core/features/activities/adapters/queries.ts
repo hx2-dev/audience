@@ -1,13 +1,13 @@
 import * as TE from "fp-ts/lib/TaskEither";
 import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { singleton } from "tsyringe";
-import { supabaseServiceClient } from "~/adapters/db/supabase";
+import { supabaseServiceClient } from "~/core/adapters/db/supabase";
 import type {
   Tables,
   TablesInsert,
   TablesUpdate,
   Json,
-} from "~/adapters/db/database.types";
+} from "~/core/adapters/db/database.types";
 import type {
   Activity,
   CreateActivity,
@@ -181,13 +181,22 @@ export class ActivityQueries {
   }): TaskEither<Error, Activity> {
     return TE.tryCatch(
       async () => {
-        const serializedData = updateActivity.data ? (() => {
-          const data = updateActivity.data;
-          if (data && typeof data === 'object' && 'type' in data && data.type === 'timer' && 'startedAt' in data && data.startedAt instanceof Date) {
-            return { ...data, startedAt: data.startedAt.toISOString() };
-          }
-          return data;
-        })() : undefined;
+        const serializedData = updateActivity.data
+          ? (() => {
+              const data = updateActivity.data;
+              if (
+                data &&
+                typeof data === "object" &&
+                "type" in data &&
+                data.type === "timer" &&
+                "startedAt" in data &&
+                data.startedAt instanceof Date
+              ) {
+                return { ...data, startedAt: data.startedAt.toISOString() };
+              }
+              return data;
+            })()
+          : undefined;
 
         const updateData: ActivityUpdate = {
           ...updateActivity,
