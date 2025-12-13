@@ -47,9 +47,6 @@ jobs:
       - name: Pull environment variables
         run: vercel env pull --environment=production --token=${{ secrets.VERCEL_TOKEN }} .env
 
-      - name: Build Next.js app
-        run: bun run build
-
       - run: source .env && supabase link --project-ref $SUPABASE_PROJECT_ID
       - run: source .env && supabase db push
 
