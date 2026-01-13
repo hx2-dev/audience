@@ -22,8 +22,10 @@ export function EventJoinForm() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = async () => {
-    if (eventId.length !== 6) {
+  const handleSubmit = async (completedValue?: string) => {
+    const id = completedValue ?? eventId;
+
+    if (id.length !== 6) {
       setError("Please enter a 6-character event ID");
       return;
     }
@@ -32,9 +34,7 @@ export function EventJoinForm() {
     setError("");
 
     try {
-      // Since we removed SSE endpoints, just navigate directly
-      // Event validation will happen on the client side via tRPC
-      router.push(`/audience/${eventId}/activity`);
+      router.push(`/audience/${id}/activity`);
     } catch {
       setError("Unable to connect. Please check your internet connection.");
     } finally {
@@ -58,6 +58,7 @@ export function EventJoinForm() {
             onChange={setEventId}
             className="uppercase"
             onComplete={handleSubmit}
+            data-testid="event-id-input"
           >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
@@ -76,7 +77,7 @@ export function EventJoinForm() {
           )}
 
           <Button
-            onClick={handleSubmit}
+            onClick={() => handleSubmit()}
             disabled={eventId.length !== 6 || isLoading}
             className="min-h-[44px] w-full text-base sm:text-lg"
           >

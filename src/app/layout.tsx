@@ -43,6 +43,21 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
+export const Providers = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <TRPCReactProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        {children}
+      </ThemeProvider>
+    </TRPCReactProvider>
+  );
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -50,26 +65,28 @@ export default function RootLayout({
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="bg-slate-50 dark:bg-slate-900">
         <SupabaseAuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <div className="relative flex min-h-screen flex-col">
-              {/* Dot Grid Background - scrolls with content but doesn't affect it */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgb(128_128_128_/_0.15)_2px,transparent_0)] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] bg-[size:24px_24px] dark:bg-[radial-gradient(circle_at_1px_1px,_rgb(150_150_150_/_0.25)_2px,transparent_0)]" />
+          <TRPCReactProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <div className="relative flex min-h-screen flex-col">
+                {/* Dot Grid Background - scrolls with content but doesn't affect it */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgb(128_128_128_/_0.15)_2px,transparent_0)] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] bg-[size:24px_24px] dark:bg-[radial-gradient(circle_at_1px_1px,_rgb(150_150_150_/_0.25)_2px,transparent_0)]" />
 
-              {/* Content layer */}
-              <div className="relative z-10 flex min-h-screen flex-col">
-                <Toaster />
-                <main className="flex flex-1 flex-col items-center justify-center">
-                  <TRPCReactProvider>{children}</TRPCReactProvider>
-                </main>
-                <AppFooter />
+                {/* Content layer */}
+                <div className="relative z-10 flex min-h-screen flex-col">
+                  <Toaster />
+                  <main className="flex flex-1 flex-col items-center justify-center">
+                    {children}
+                  </main>
+                  <AppFooter />
+                </div>
               </div>
-            </div>
-          </ThemeProvider>
+            </ThemeProvider>
+          </TRPCReactProvider>
         </SupabaseAuthProvider>
       </body>
     </html>

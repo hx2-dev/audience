@@ -16,6 +16,8 @@ const config = {
     ignoreBuildErrors: process.env.CI === "true",
   },
   allowedDevOrigins: ["audience-dev.hx2.dev"],
+  // Transpile ESM-only packages for both Next.js and Jest
+  transpilePackages: ["superjson"],
 };
 
 const withMDX = createMDX({});
