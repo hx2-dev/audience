@@ -15,6 +15,40 @@ type EventRow = Tables<"hx2-audience_event">;
 type EventInsert = TablesInsert<"hx2-audience_event">;
 type EventUpdate = TablesUpdate<"hx2-audience_event">;
 
+export const EventQueriesSymbol = Symbol("EventQueries");
+
+export interface IEventQueries {
+  getById({ id }: { id: string }): Promise<Event | null>;
+  getByCreatorId({ creatorId }: { creatorId: string }): Promise<Event[]>;
+  getByShortId({ shortId }: { shortId: string }): Promise<Event | null>;
+  create({
+    createEvent,
+    userId,
+  }: {
+    createEvent: CreateEvent;
+    userId: string;
+  }): Promise<Event>;
+  updateShortId({
+    eventId,
+    shortId,
+    userId,
+  }: {
+    eventId: string;
+    shortId: string;
+    userId: string;
+  }): Promise<Event | null>;
+  update({
+    eventId,
+    updateEvent,
+    userId,
+  }: {
+    eventId: string;
+    updateEvent: UpdateEvent;
+    userId: string;
+  }): Promise<Event | null>;
+  delete({ id, userId }: { id: string; userId: string }): Promise<void>;
+}
+
 @singleton()
 export class EventQueries {
   private rowToEvent(event: EventRow): Event {

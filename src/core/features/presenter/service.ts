@@ -1,6 +1,9 @@
 import { inject, injectable } from "tsyringe";
 import type { Event } from "~/core/features/events/types";
-import { PresenterQueries } from "./adapters/queries";
+import {
+  type PresenterQueries,
+  PresenterQueriesSymbol,
+} from "./adapters/queries";
 import { EventService } from "~/core/features/events/service";
 import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import type {
@@ -13,7 +16,7 @@ export const PresenterServiceSymbol = Symbol("PresenterService");
 @injectable({ token: PresenterServiceSymbol })
 export class PresenterService {
   constructor(
-    @inject(PresenterQueries)
+    @inject(PresenterQueriesSymbol)
     private readonly presenterQueries: PresenterQueries,
     @inject(EventService)
     private readonly eventService: EventService,

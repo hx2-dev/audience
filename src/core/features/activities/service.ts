@@ -1,12 +1,21 @@
 import { inject, singleton } from "tsyringe";
-import { ActivityQueries } from "./adapters/queries";
+import {
+  type ActivityQueries,
+  ActivityQueriesSymbol,
+} from "./adapters/queries";
 import { EventService } from "~/core/features/events/service";
 import {
   PresenterService,
   PresenterServiceSymbol,
 } from "~/core/features/presenter/service";
-import { PresenterQueries } from "../presenter/adapters/queries";
-import { ActivityResponseQueries } from "../responses/adapters/queries";
+import {
+  type PresenterQueries,
+  PresenterQueriesSymbol,
+} from "../presenter/adapters/queries";
+import {
+  type ActivityResponseQueries,
+  ActivityResponseQueriesSymbol,
+} from "../responses/adapters/queries";
 import { ActivityResultsService } from "~/core/features/activities/results-service";
 import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import type {
@@ -21,15 +30,15 @@ import type { ActivityResult } from "~/core/features/activities/results";
 @singleton()
 export class ActivityService {
   constructor(
-    @inject(ActivityQueries)
+    @inject(ActivityQueriesSymbol)
     private readonly activityQueries: ActivityQueries,
     @inject(EventService)
     private readonly eventService: EventService,
     @inject(PresenterServiceSymbol)
     private readonly presenterService: PresenterService,
-    @inject(PresenterQueries)
+    @inject(PresenterQueriesSymbol)
     private readonly presenterQueries: PresenterQueries,
-    @inject(ActivityResponseQueries)
+    @inject(ActivityResponseQueriesSymbol)
     private readonly responseQueries: ActivityResponseQueries,
     @inject(ActivityResultsService)
     private readonly resultsService: ActivityResultsService,

@@ -15,6 +15,8 @@ type QuestionRow = Tables<"hx2-audience_question">;
 type QuestionInsert = TablesInsert<"hx2-audience_question">;
 type QuestionUpdate = TablesUpdate<"hx2-audience_question">;
 
+export const QuestionQueriesSymbol = Symbol("QuestionQueries");
+
 @singleton()
 export class QuestionQueries {
   private rowToQuestion(question: QuestionRow): Question {

@@ -1,6 +1,12 @@
 import { inject, singleton } from "tsyringe";
-import { ActivityQueries } from "./adapters/queries";
-import { ActivityResponseQueries } from "../responses/adapters/queries";
+import {
+  type ActivityQueries,
+  ActivityQueriesSymbol,
+} from "./adapters/queries";
+import {
+  type ActivityResponseQueries,
+  ActivityResponseQueriesSymbol,
+} from "../responses/adapters/queries";
 import type { Activity } from "~/core/features/activities/types";
 import type { BaseActivityResponse } from "~/core/features/responses/types";
 import {
@@ -19,9 +25,9 @@ import { NotFoundError } from "~/core/common/error";
 @singleton()
 export class ActivityResultsService {
   constructor(
-    @inject(ActivityQueries)
+    @inject(ActivityQueriesSymbol)
     private readonly activityQueries: ActivityQueries,
-    @inject(ActivityResponseQueries)
+    @inject(ActivityResponseQueriesSymbol)
     private readonly responseQueries: ActivityResponseQueries,
   ) {}
 

@@ -1,12 +1,12 @@
 import { inject, singleton } from "tsyringe";
 import type { CreateEvent, Event, UpdateEvent } from "./types";
-import { EventQueries } from "./adapters/queries";
+import { type EventQueries, EventQueriesSymbol } from "./adapters/queries";
 import { ForbiddenError, NotFoundError } from "~/core/common/error";
 
 @singleton()
 export class EventService {
   constructor(
-    @inject(EventQueries)
+    @inject(EventQueriesSymbol)
     private readonly eventQueries: EventQueries,
   ) {}
 

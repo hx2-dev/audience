@@ -1,5 +1,8 @@
 import { inject, singleton } from "tsyringe";
-import { QuestionQueries } from "./adapters/queries";
+import {
+  type QuestionQueries,
+  QuestionQueriesSymbol,
+} from "./adapters/queries";
 import { EventService } from "~/core/features/events/service";
 import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import type {
@@ -12,7 +15,7 @@ import type { Event } from "~/core/features/events/types";
 @singleton()
 export class QuestionService {
   constructor(
-    @inject(QuestionQueries)
+    @inject(QuestionQueriesSymbol)
     private readonly questionQueries: QuestionQueries,
     @inject(EventService)
     private readonly eventService: EventService,

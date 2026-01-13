@@ -1,6 +1,9 @@
 import { inject, singleton } from "tsyringe";
 import { z } from "zod";
-import { ActivityResponseQueries } from "./adapters/queries";
+import {
+  type ActivityResponseQueries,
+  ActivityResponseQueriesSymbol,
+} from "./adapters/queries";
 import { ActivityService } from "~/core/features/activities/service";
 import { EventService } from "~/core/features/events/service";
 import { NotFoundError } from "~/core/common/error";
@@ -15,7 +18,7 @@ import { extractUserResponse } from "~/core/features/responses/validators";
 @singleton()
 export class ActivityResponseService {
   constructor(
-    @inject(ActivityResponseQueries)
+    @inject(ActivityResponseQueriesSymbol)
     private readonly responseQueries: ActivityResponseQueries,
     @inject(ActivityService)
     private readonly activityService: ActivityService,

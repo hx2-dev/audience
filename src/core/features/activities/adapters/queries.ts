@@ -20,6 +20,8 @@ type ActivityRow = Tables<"hx2-audience_activity">;
 type ActivityInsert = TablesInsert<"hx2-audience_activity">;
 type ActivityUpdate = TablesUpdate<"hx2-audience_activity">;
 
+export const ActivityQueriesSymbol = Symbol("ActivityQueries");
+
 @singleton()
 export class ActivityQueries {
   private rowToActivity(activity: ActivityRow): Activity {

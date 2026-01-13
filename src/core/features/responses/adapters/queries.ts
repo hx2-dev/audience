@@ -14,6 +14,8 @@ import type {
 type ActivityResponseRow = Tables<"hx2-audience_activity_response">;
 type ActivityResponseInsert = TablesInsert<"hx2-audience_activity_response">;
 
+export const ActivityResponseQueriesSymbol = Symbol("ActivityResponseQueries");
+
 @singleton()
 export class ActivityResponseQueries {
   private rowToResponse(response: ActivityResponseRow): BaseActivityResponse {
