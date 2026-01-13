@@ -1,5 +1,4 @@
 import { z } from "zod";
-import * as E from "fp-ts/lib/Either";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -11,36 +10,36 @@ import {
 } from "~/core/features/activities/types";
 import { ActivityService } from "~/core/features/activities/service";
 import { container } from "tsyringe";
-import { toTrpcError } from "~/core/common/error";
+import { toTrpcError, NotFoundError } from "~/core/common/error";
 import type { Activity } from "~/core/features/activities/types";
 import type { ActivityResult } from "~/core/features/activities/results";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 
 const serviceCall = async <T>(
-  fn: (service: ActivityService) => TaskEither<Error, T>,
-) => {
+  fn: (service: ActivityService) => Promise<T>,
+): Promise<T> => {
   const service = container.resolve<ActivityService>(ActivityService);
-  const result = await fn(service)();
-
-  return E.match(
-    (error: Error) => {
-      throw toTrpcError(error);
-    },
-    (data: T) => data,
-  )(result);
+  try {
+    return await fn(service);
+  } catch (error) {
+    throw toTrpcError(error instanceof Error ? error : new Error(String(error)));
+  }
 };
 
 export const activitiesRouter = createTRPCRouter({
   getByEventId: publicProcedure
     .input(z.object({ eventId: z.uuid() }))
-    .query<Activity[]>(({ input }) => {
+    .query<Activity[]>(async ({ input }) => {
       return serviceCall((service) => service.getByEventId(input.eventId));
     }),
 
   getById: publicProcedure
     .input(z.object({ id: z.number().int().min(1) }))
-    .query<Activity>(({ input }) => {
-      return serviceCall((service) => service.getById(input.id));
+    .query<Activity>(async ({ input }) => {
+      const result = await serviceCall((service) => service.getById(input.id));
+      if (!result) {
+        throw toTrpcError(new NotFoundError("Activity not found"));
+      }
+      return result;
     }),
 
   create: protectedProcedure
@@ -61,7 +60,7 @@ export const activitiesRouter = createTRPCRouter({
 
   delete: protectedProcedure
     .input(z.object({ id: z.number().int().min(1) }))
-    .mutation<void>(({ ctx, input }) => {
+    .mutation<void>(async ({ ctx, input }) => {
       return serviceCall((service) =>
         service.delete(input.id, ctx.session.user.id),
       );
@@ -69,7 +68,7 @@ export const activitiesRouter = createTRPCRouter({
 
   reorder: protectedProcedure
     .input(z.object({ activityIds: z.array(z.number().int().min(1)) }))
-    .mutation<void>(({ ctx, input }) => {
+    .mutation<void>(async ({ ctx, input }) => {
       return serviceCall((service) =>
         service.reorder(input.activityIds, ctx.session.user.id),
       );
@@ -77,7 +76,7 @@ export const activitiesRouter = createTRPCRouter({
 
   getResults: protectedProcedure
     .input(z.object({ activityId: z.number().int().min(1) }))
-    .query<ActivityResult>(({ ctx, input }) => {
+    .query<ActivityResult>(async ({ ctx, input }) => {
       return serviceCall((service) =>
         service.getResults(input.activityId, ctx.session.user.id),
       );

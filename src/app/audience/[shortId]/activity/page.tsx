@@ -4,7 +4,6 @@ import "reflect-metadata";
 import { AudienceActivityPageClient } from "./audience-activity-client";
 import { container } from "tsyringe";
 import { EventService } from "~/core/features/events/service";
-import * as E from "fp-ts/lib/Either";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -20,13 +19,12 @@ export async function generateMetadata({
 
   try {
     const eventService = container.resolve(EventService);
-    const eventResult = await eventService.getByShortId(shortId)();
+    const event = await eventService.getByShortId(shortId);
 
-    if (E.isLeft(eventResult)) {
+    if (!event) {
       return { title: `Event ${shortId.toUpperCase()} - Not Found` };
     }
 
-    const event = eventResult.right;
     return {
       title: `${event.title} - Activity`,
       description: event.description ?? `Join the activity for ${event.title}`,
@@ -37,6 +35,5 @@ export async function generateMetadata({
 }
 
 export default async function AudienceActivityPage() {
-  // Event data is provided by the layout via EventProvider
   return <AudienceActivityPageClient />;
 }

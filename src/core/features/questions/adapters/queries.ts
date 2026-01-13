@@ -1,5 +1,3 @@
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { singleton } from "tsyringe";
 import { supabaseServiceClient } from "~/core/adapters/db/supabase";
 import type {
@@ -12,7 +10,6 @@ import type {
   Question,
   UpdateQuestion,
 } from "~/core/features/questions/types";
-import { NotFoundError } from "~/core/common/error";
 
 type QuestionRow = Tables<"hx2-audience_question">;
 type QuestionInsert = TablesInsert<"hx2-audience_question">;
@@ -37,55 +34,44 @@ export class QuestionQueries {
     };
   }
 
-  getByEventId({
-    eventId,
-  }: {
-    eventId: string;
-  }): TaskEither<Error, Question[]> {
-    return TE.tryCatch(
-      async () => {
-        const { data: questions, error } = await supabaseServiceClient
-          .from("hx2-audience_question")
-          .select("*")
-          .eq("eventId", eventId)
-          .is("deleted", null)
-          .order("createdAt", { ascending: false });
+  async getByEventId({ eventId }: { eventId: string }): Promise<Question[]> {
+    const { data: questions, error } = await supabaseServiceClient
+      .from("hx2-audience_question")
+      .select("*")
+      .eq("eventId", eventId)
+      .is("deleted", null)
+      .order("createdAt", { ascending: false });
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        return questions.map((question) => this.rowToQuestion(question));
-      },
-      (error) => error as Error,
-    );
+    return questions.map((question) => this.rowToQuestion(question));
   }
 
-  getById({ id }: { id: number }): TaskEither<Error, Question> {
-    return TE.tryCatch(
-      async () => {
-        const { data: question, error } = await supabaseServiceClient
-          .from("hx2-audience_question")
-          .select("*")
-          .eq("id", id)
-          .is("deleted", null)
-          .single();
+  async getById({ id }: { id: number }): Promise<Question | null> {
+    const { data: question, error } = await supabaseServiceClient
+      .from("hx2-audience_question")
+      .select("*")
+      .eq("id", id)
+      .is("deleted", null)
+      .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null;
+      }
+      throw new Error(error.message);
+    }
 
-        if (!question) {
-          throw new NotFoundError("Question not found");
-        }
+    if (!question) {
+      return null;
+    }
 
-        return this.rowToQuestion(question);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToQuestion(question);
   }
 
-  create({
+  async create({
     createQuestion,
     userId,
     userName,
@@ -93,39 +79,34 @@ export class QuestionQueries {
     createQuestion: CreateQuestion;
     userId: string;
     userName?: string;
-  }): TaskEither<Error, Question> {
-    return TE.tryCatch(
-      async () => {
-        const questionData: QuestionInsert = {
-          eventId: createQuestion.eventId,
-          question: createQuestion.question,
-          isAnonymous: createQuestion.isAnonymous,
-          submitterUserId: userId,
-          submitterName: createQuestion.isAnonymous ? null : (userName ?? null),
-          updatedBy: userId,
-        };
+  }): Promise<Question> {
+    const questionData: QuestionInsert = {
+      eventId: createQuestion.eventId,
+      question: createQuestion.question,
+      isAnonymous: createQuestion.isAnonymous,
+      submitterUserId: userId,
+      submitterName: createQuestion.isAnonymous ? null : (userName ?? null),
+      updatedBy: userId,
+    };
 
-        const { data: question, error } = await supabaseServiceClient
-          .from("hx2-audience_question")
-          .insert(questionData)
-          .select()
-          .single();
+    const { data: question, error } = await supabaseServiceClient
+      .from("hx2-audience_question")
+      .insert(questionData)
+      .select()
+      .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        if (!question) {
-          throw new NotFoundError("Question not created");
-        }
+    if (!question) {
+      throw new Error("Question not created");
+    }
 
-        return this.rowToQuestion(question);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToQuestion(question);
   }
 
-  update({
+  async update({
     questionId,
     updateQuestion,
     userId,
@@ -133,59 +114,52 @@ export class QuestionQueries {
     questionId: number;
     updateQuestion: UpdateQuestion;
     userId: string;
-  }): TaskEither<Error, Question> {
-    return TE.tryCatch(
-      async () => {
-        const updateData: QuestionUpdate = {
-          ...updateQuestion,
-          updatedBy: userId,
-        };
+  }): Promise<Question | null> {
+    const updateData: QuestionUpdate = {
+      ...updateQuestion,
+      updatedBy: userId,
+    };
 
-        const { data: question, error } = await supabaseServiceClient
-          .from("hx2-audience_question")
-          .update(updateData)
-          .eq("id", questionId)
-          .is("deleted", null)
-          .select()
-          .single();
+    const { data: question, error } = await supabaseServiceClient
+      .from("hx2-audience_question")
+      .update(updateData)
+      .eq("id", questionId)
+      .is("deleted", null)
+      .select()
+      .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null;
+      }
+      throw new Error(error.message);
+    }
 
-        if (!question) {
-          throw new NotFoundError("Question not updated");
-        }
+    if (!question) {
+      return null;
+    }
 
-        return this.rowToQuestion(question);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToQuestion(question);
   }
 
-  delete({
+  async delete({
     questionId,
     userId,
   }: {
     questionId: number;
     userId: string;
-  }): TaskEither<Error, void> {
-    return TE.tryCatch(
-      async () => {
-        const { error } = await supabaseServiceClient
-          .from("hx2-audience_question")
-          .update({
-            deleted: new Date().toISOString(),
-            updatedBy: userId,
-          })
-          .eq("id", questionId)
-          .is("deleted", null);
+  }): Promise<void> {
+    const { error } = await supabaseServiceClient
+      .from("hx2-audience_question")
+      .update({
+        deleted: new Date().toISOString(),
+        updatedBy: userId,
+      })
+      .eq("id", questionId)
+      .is("deleted", null);
 
-        if (error) {
-          throw new Error(error.message);
-        }
-      },
-      (error) => error as Error,
-    );
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 }

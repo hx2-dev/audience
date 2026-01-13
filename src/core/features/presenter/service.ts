@@ -1,15 +1,12 @@
 import { inject, injectable } from "tsyringe";
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 import type { Event } from "~/core/features/events/types";
 import { PresenterQueries } from "./adapters/queries";
 import { EventService } from "~/core/features/events/service";
-import { ForbiddenError } from "~/core/common/error";
+import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import type {
   PresenterState,
   UpdatePresenterState,
 } from "~/core/features/presenter/types";
-import { pipe } from "fp-ts/lib/function";
 
 export const PresenterServiceSymbol = Symbol("PresenterService");
 
@@ -22,39 +19,27 @@ export class PresenterService {
     private readonly eventService: EventService,
   ) {}
 
-  getByEventId(eventId: string): TaskEither<Error, PresenterState> {
+  async getByEventId(eventId: string): Promise<PresenterState | null> {
     return this.presenterQueries.getByEventId({ eventId });
   }
 
-  updateState(
+  async updateState(
     updateState: UpdatePresenterState,
     userId: string,
-  ): TaskEither<Error, PresenterState> {
-    return pipe(
-      this.eventService.getById(updateState.eventId),
-      TE.flatMap(this.checkEventAuthorization(userId)),
-      TE.flatMap((event: Event) =>
-        pipe(
-          this.presenterQueries.upsert({ updateState }),
-          TE.tap((_state: PresenterState) => {
-            const shortId = event.shortId;
-            if (shortId) {
-              return TE.right(void 0); // Broadcasting replaced with Supabase Realtime
-            }
-            return TE.right(void 0);
-          }),
-        ),
-      ),
-    );
+  ): Promise<PresenterState> {
+    const event = await this.eventService.getById(updateState.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+    return this.presenterQueries.upsert({ updateState });
   }
 
-  private checkEventAuthorization(userId: string) {
-    return TE.fromPredicate(
-      (event: Event) => event.creatorId === userId,
-      (event: Event) =>
-        new ForbiddenError(
-          `User ${userId} is not authorized to control event ${event.id}`,
-        ),
-    );
+  private checkEventAuthorization(event: Event, userId: string): void {
+    if (event.creatorId !== userId) {
+      throw new ForbiddenError(
+        `User ${userId} is not authorized to control event ${event.id}`,
+      );
+    }
   }
 }

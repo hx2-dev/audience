@@ -5,8 +5,7 @@ import { auth, createSigninUrl } from "~/core/generic/auth";
 import { container } from "tsyringe";
 import { z } from "zod";
 import { EventService } from "~/core/features/events/service";
-import * as E from "fp-ts/lib/Either";
-import { ForbiddenError, NotFoundError } from "~/core/common/error";
+import { ForbiddenError } from "~/core/common/error";
 import { Card, CardContent } from "~/components/ui/card";
 import { PresenterEventProvider } from "~/components/providers/presenter-event-provider";
 import { PresenterLayoutHeader } from "~/components/features/presenter/presenter-layout-header";
@@ -22,14 +21,12 @@ export default async function PresenterLayout({
   const session = await auth();
   const { eventId: eventIdParam } = await params;
 
-  // Check authentication
   if (!session) {
     redirect(createSigninUrl(`/presenter/${eventIdParam}`));
   }
 
   const eventId = eventIdParam;
 
-  // Check valid event ID (UUID format)
   const uuidResult = z.uuid().safeParse(eventId);
   if (!uuidResult.success) {
     return (
@@ -46,15 +43,24 @@ export default async function PresenterLayout({
     );
   }
 
-  // Check if user has access to presenter controls
   const eventService = container.resolve(EventService);
-  const accessResult = await eventService.checkPresenterAccess(
-    eventId,
-    session.user.id,
-  )();
 
-  if (E.isLeft(accessResult)) {
-    if (accessResult.left instanceof ForbiddenError) {
+  try {
+    const event = await eventService.checkPresenterAccess(
+      eventId,
+      session.user.id,
+    );
+
+    return (
+      <PresenterEventProvider event={event} eventId={eventId} session={session}>
+        <div className="mx-auto w-full max-w-2xl p-4 sm:p-6 xl:max-w-7xl">
+          <PresenterLayoutHeader />
+          {children}
+        </div>
+      </PresenterEventProvider>
+    );
+  } catch (error) {
+    if (error instanceof ForbiddenError) {
       return (
         <div className="flex items-center justify-center py-20">
           <Card className="bg-background/80 mx-4 w-full max-w-md backdrop-blur-sm">
@@ -75,7 +81,10 @@ export default async function PresenterLayout({
       );
     }
 
-    if (accessResult.left instanceof NotFoundError) {
+    if (
+      error instanceof Error &&
+      error.message.toLowerCase().includes("not found")
+    ) {
       return (
         <div className="flex items-center justify-center py-20">
           <Card className="bg-background/80 mx-4 w-full max-w-md backdrop-blur-sm">
@@ -92,8 +101,7 @@ export default async function PresenterLayout({
       );
     }
 
-    // Other errors
-    Sentry.captureException(accessResult.left);
+    Sentry.captureException(error);
     return (
       <div className="flex items-center justify-center py-20">
         <Card className="bg-background/80 mx-4 w-full max-w-md backdrop-blur-sm">
@@ -108,16 +116,4 @@ export default async function PresenterLayout({
       </div>
     );
   }
-
-  // User has access, provide event data to children
-  const event = accessResult.right;
-
-  return (
-    <PresenterEventProvider event={event} eventId={eventId} session={session}>
-      <div className="mx-auto w-full max-w-2xl p-4 sm:p-6 xl:max-w-7xl">
-        <PresenterLayoutHeader />
-        {children}
-      </div>
-    </PresenterEventProvider>
-  );
 }

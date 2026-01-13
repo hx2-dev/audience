@@ -1,5 +1,4 @@
 import { z } from "zod";
-import * as E from "fp-ts/lib/Either";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -11,23 +10,19 @@ import {
   PresenterServiceSymbol,
 } from "~/core/features/presenter/service";
 import { container } from "tsyringe";
-import { toTrpcError, NotFoundError } from "~/core/common/error";
+import { toTrpcError } from "~/core/common/error";
 import type { PresenterState } from "~/core/features/presenter/types";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 import type { ActivityResponse } from "~/core/features/responses/types";
 
 const serviceCall = async <T>(
-  fn: (service: PresenterService) => TaskEither<Error, T>,
-) => {
+  fn: (service: PresenterService) => Promise<T>,
+): Promise<T> => {
   const service = container.resolve<PresenterService>(PresenterServiceSymbol);
-  const result = await fn(service)();
-
-  return E.match(
-    (error: Error) => {
-      throw toTrpcError(error);
-    },
-    (data: T) => data,
-  )(result);
+  try {
+    return await fn(service);
+  } catch (error) {
+    throw toTrpcError(error instanceof Error ? error : new Error(String(error)));
+  }
 };
 
 export const presenterRouter = createTRPCRouter({
@@ -37,18 +32,7 @@ export const presenterRouter = createTRPCRouter({
       const service = container.resolve<PresenterService>(
         PresenterServiceSymbol,
       );
-      const result = await service.getByEventId(input.eventId)();
-
-      return E.match(
-        (error: Error) => {
-          // If it's a NotFoundError, return null instead of throwing
-          if (error instanceof NotFoundError) {
-            return null;
-          }
-          throw toTrpcError(error);
-        },
-        (data: PresenterState) => data,
-      )(result);
+      return service.getByEventId(input.eventId);
     }),
 
   getStateWithUserResponse: protectedProcedure
@@ -65,23 +49,17 @@ export const presenterRouter = createTRPCRouter({
       const service = container.resolve<PresenterService>(
         PresenterServiceSymbol,
       );
-      const result = await service.getByEventId(input.eventId)();
+      const presenterState = await service.getByEventId(input.eventId);
 
-      // Check if it's a NotFoundError
-      if (E.isLeft(result)) {
-        if (result.left instanceof NotFoundError) {
-          return {
-            presenterState: null,
-            userResponse: null,
-            allResponses: [],
-          };
-        }
-        throw toTrpcError(result.left);
+      if (!presenterState) {
+        return {
+          presenterState: null,
+          userResponse: null,
+          allResponses: [],
+        };
       }
 
-      const presenterState = result.right;
-
-      let userResponse = null;
+      let userResponse: ActivityResponse | null = null;
       if (
         presenterState.data?.type &&
         "activityId" in presenterState.data &&
@@ -96,13 +74,10 @@ export const presenterRouter = createTRPCRouter({
         );
         const responseService = container.resolve(ActivityResponseService);
 
-        const responseResult = await responseService.getUserResponse(
+        userResponse = await responseService.getUserResponse(
           ctx.session.user.id,
           presenterState.data.activityId,
-        )();
-        if (responseResult._tag === "Right") {
-          userResponse = responseResult.right;
-        }
+        );
       }
 
       let allResponses: ActivityResponse[] = [];
@@ -120,12 +95,9 @@ export const presenterRouter = createTRPCRouter({
         );
         const responseService = container.resolve(ActivityResponseService);
 
-        const allResponsesResult = await responseService.getByActivityId(
+        allResponses = await responseService.getByActivityId(
           presenterState.data.activityId,
-        )();
-        if (allResponsesResult._tag === "Right") {
-          allResponses = allResponsesResult.right;
-        }
+        );
       }
 
       return {

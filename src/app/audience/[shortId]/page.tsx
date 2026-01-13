@@ -4,7 +4,6 @@ import "reflect-metadata";
 import { redirect } from "next/navigation";
 import { container } from "tsyringe";
 import { EventService } from "~/core/features/events/service";
-import * as E from "fp-ts/lib/Either";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -20,13 +19,12 @@ export async function generateMetadata({
 
   try {
     const eventService = container.resolve(EventService);
-    const eventResult = await eventService.getByShortId(shortId)();
+    const event = await eventService.getByShortId(shortId);
 
-    if (E.isLeft(eventResult)) {
+    if (!event) {
       return { title: `Event ${shortId.toUpperCase()} - Not Found` };
     }
 
-    const event = eventResult.right;
     return {
       title: `${event.title} - Audience`,
       description: event.description ?? `Join the audience for ${event.title}`,
@@ -42,7 +40,6 @@ export default async function AudiencePage({
   params: Promise<{ shortId: string }>;
 }) {
   const { shortId } = await params;
-  
-  // Redirect to the activity page by default
+
   redirect(`/audience/${shortId}/activity`);
 }

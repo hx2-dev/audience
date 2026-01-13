@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { auth, createSigninUrl } from "~/core/generic/auth";
 import { container } from "tsyringe";
 import { EventService } from "~/core/features/events/service";
-import * as E from "fp-ts/lib/Either";
 import { Card, CardContent } from "~/components/ui/card";
 import { EventProvider } from "~/components/providers/event-provider";
 import { AudienceRealtimeProvider } from "~/components/providers/audience-realtime-provider";
@@ -21,12 +20,10 @@ export default async function AudienceLayout({
   const { shortId } = await params;
   const session = await auth();
 
-  // Check authentication
   if (!session) {
     redirect(createSigninUrl(`/audience/${shortId}`));
   }
 
-  // Validate shortId
   if (!shortId) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -42,11 +39,10 @@ export default async function AudienceLayout({
     );
   }
 
-  // Fetch and validate event
   const eventService = container.resolve(EventService);
-  const eventResult = await eventService.getByShortId(shortId)();
+  const event = await eventService.getByShortId(shortId);
 
-  if (E.isLeft(eventResult)) {
+  if (!event) {
     return (
       <div className="flex items-center justify-center py-20">
         <Card className="bg-background/80 mx-4 w-full max-w-md backdrop-blur-sm">
@@ -67,9 +63,6 @@ export default async function AudienceLayout({
       </div>
     );
   }
-
-  // Event is valid, provide it to children
-  const event = eventResult.right;
 
   return (
     <EventProvider event={event} shortId={shortId} session={session}>

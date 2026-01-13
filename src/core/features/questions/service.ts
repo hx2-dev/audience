@@ -1,16 +1,13 @@
 import { inject, singleton } from "tsyringe";
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { QuestionQueries } from "./adapters/queries";
 import { EventService } from "~/core/features/events/service";
-import { ForbiddenError } from "~/core/common/error";
+import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import type {
   CreateQuestion,
   PublicQuestion,
   Question,
 } from "~/core/features/questions/types";
 import type { Event } from "~/core/features/events/types";
-import { pipe } from "fp-ts/lib/function";
 
 @singleton()
 export class QuestionService {
@@ -21,14 +18,12 @@ export class QuestionService {
     private readonly eventService: EventService,
   ) {}
 
-  getByEventId(eventId: string): TaskEither<Error, PublicQuestion[]> {
-    return pipe(
-      this.questionQueries.getByEventId({ eventId }),
-      TE.map((questions) => questions.map((q) => this.toPublicQuestion(q))),
-    );
+  async getByEventId(eventId: string): Promise<PublicQuestion[]> {
+    const questions = await this.questionQueries.getByEventId({ eventId });
+    return questions.map((q) => this.toPublicQuestion(q));
   }
 
-  getByEventIdForPresenter(eventId: string): TaskEither<Error, Question[]> {
+  async getByEventIdForPresenter(eventId: string): Promise<Question[]> {
     return this.questionQueries.getByEventId({ eventId });
   }
 
@@ -38,75 +33,70 @@ export class QuestionService {
     return publicQuestion;
   };
 
-  getById(id: number): TaskEither<Error, Question> {
+  async getById(id: number): Promise<Question | null> {
     return this.questionQueries.getById({ id });
   }
 
-  submit(
+  async submit(
     createQuestion: CreateQuestion,
     userId: string,
     userName?: string,
-  ): TaskEither<Error, PublicQuestion> {
-    return pipe(
-      this.eventService.getById(createQuestion.eventId),
-      TE.flatMap(() =>
-        pipe(
-          this.questionQueries.create({ createQuestion, userId, userName }),
-          TE.map((q) => this.toPublicQuestion(q)),
-        ),
-      ),
-    );
+  ): Promise<PublicQuestion> {
+    const event = await this.eventService.getById(createQuestion.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    const question = await this.questionQueries.create({
+      createQuestion,
+      userId,
+      userName,
+    });
+    return this.toPublicQuestion(question);
   }
 
-  answer(
+  async answer(
     questionId: number,
     answer: string,
     userId: string,
-  ): TaskEither<Error, Question> {
-    return pipe(
-      this.getById(questionId),
-      TE.flatMap((question) =>
-        pipe(
-          this.eventService.getById(question.eventId),
-          TE.flatMap(this.checkEventAuthorization(userId)),
-          TE.map((event) => ({ question, event })),
-        ),
-      ),
-      TE.flatMap(() =>
-        pipe(
-          this.questionQueries.update({
-            questionId,
-            updateQuestion: { isAnswered: true, answer },
-            userId,
-          }),
-        ),
-      ),
-    );
+  ): Promise<Question> {
+    const question = await this.getById(questionId);
+    if (!question) {
+      throw new NotFoundError("Question not found");
+    }
+    const event = await this.eventService.getById(question.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+    const updated = await this.questionQueries.update({
+      questionId,
+      updateQuestion: { isAnswered: true, answer },
+      userId,
+    });
+    if (!updated) {
+      throw new NotFoundError("Question not updated");
+    }
+    return updated;
   }
 
-  delete(questionId: number, userId: string): TaskEither<Error, void> {
-    return pipe(
-      this.getById(questionId),
-      TE.flatMap((question) =>
-        pipe(
-          this.eventService.getById(question.eventId),
-          TE.flatMap(this.checkEventAuthorization(userId)),
-          TE.map((event) => ({ question, event })),
-        ),
-      ),
-      TE.flatMap(() =>
-        pipe(this.questionQueries.delete({ questionId, userId })),
-      ),
-    );
+  async delete(questionId: number, userId: string): Promise<void> {
+    const question = await this.getById(questionId);
+    if (!question) {
+      throw new NotFoundError("Question not found");
+    }
+    const event = await this.eventService.getById(question.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+    await this.questionQueries.delete({ questionId, userId });
   }
 
-  private checkEventAuthorization(userId: string) {
-    return TE.fromPredicate(
-      (event: Event) => event.creatorId === userId,
-      (event: Event) =>
-        new ForbiddenError(
-          `User ${userId} is not authorized to manage questions for event ${event.id}`,
-        ),
-    );
+  private checkEventAuthorization(event: Event, userId: string): void {
+    if (event.creatorId !== userId) {
+      throw new ForbiddenError(
+        `User ${userId} is not authorized to manage questions for event ${event.id}`,
+      );
+    }
   }
 }

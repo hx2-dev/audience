@@ -1,5 +1,4 @@
 import { z } from "zod";
-import * as E from "fp-ts/lib/Either";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -16,28 +15,24 @@ import type {
   BaseActivityResponse,
   ActivityResponse,
 } from "~/core/features/responses/types";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 
 const serviceCall = async <T>(
-  fn: (service: ActivityResponseService) => TaskEither<Error, T>,
-) => {
+  fn: (service: ActivityResponseService) => Promise<T>,
+): Promise<T> => {
   const service = container.resolve<ActivityResponseService>(
     ActivityResponseService,
   );
-  const result = await fn(service)();
-
-  return E.match(
-    (error: Error) => {
-      throw toTrpcError(error);
-    },
-    (data: T) => data,
-  )(result);
+  try {
+    return await fn(service);
+  } catch (error) {
+    throw toTrpcError(error instanceof Error ? error : new Error(String(error)));
+  }
 };
 
 export const responsesRouter = createTRPCRouter({
   getByActivityId: publicProcedure
     .input(z.object({ activityId: z.number().int().min(1) }))
-    .query<ActivityResponse[]>(({ input }) => {
+    .query<ActivityResponse[]>(async ({ input }) => {
       return serviceCall((service) =>
         service.getByActivityId(input.activityId),
       );
@@ -50,7 +45,7 @@ export const responsesRouter = createTRPCRouter({
         activityId: z.number().int().min(1),
       }),
     )
-    .query<ActivityResponse | null>(({ input }) => {
+    .query<ActivityResponse | null>(async ({ input }) => {
       return serviceCall((service) =>
         service.getUserResponse(input.userId, input.activityId),
       );

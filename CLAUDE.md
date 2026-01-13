@@ -1,6 +1,6 @@
 # hx2-audience
 
-*An audience participation tool for classrooms and presentations.*
+_An audience participation tool for classrooms and presentations._
 
 ## Overview
 
@@ -49,30 +49,15 @@ hx2-audience
 └── CLAUDE.md -- this file
 ```
 
-## Functional Programming Patterns
-
-The codebase uses `fp-ts` for functional programming patterns:
-
-- **`TaskEither<Error, T>`** - Represents async operations that can fail
-- **`TE.tryCatch`** - Wraps async operations that might throw exceptions
-- **`TE.flatMap`** - Chains operations that return `TaskEither`
-- **`TE.fromPredicate`** - Creates validation functions
-- **`pipe`** - Composes operations in a readable way
-
-### Key Benefits:
-- **Type Safety** - Errors are part of the type system
-- **Composability** - Operations can be easily chained
-- **No Exceptions** - Errors are handled explicitly
-- **Testability** - Pure functions are easier to test
-
 ## Creating a new feature
 
 To create a new feature, you need to create a new folder in the
 `src/core/features` folder. For example, if we were creating a new feature for
-questions, we would create the `src/core/features/questions` folder. Then, we 
+questions, we would create the `src/core/features/questions` folder. Then, we
 would create or modify the following files:
 
 `src/core/features/questions/questions.ts`
+
 ```ts
 import { z } from "zod";
 
@@ -99,269 +84,272 @@ export type UpdateQuestion = z.infer<typeof updateQuestionValidator>;
 ```
 
 `src/adapters/db/schema.ts`
+
 ```ts
-export const questions = createTable("question", (d) => ({
-  id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-  eventId: d.uuid().notNull().references(() => events.id),
-  question: d.varchar({ length: 256 }).notNull(),
-  order: d.integer().notNull().default(0),
-  createdAt: d.timestamp({ withTimezone: true }).default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(sql`CURRENT_TIMESTAMP`),
-  updatedBy: d.varchar({ length: 255 }).notNull().references(() => users.id),
-  deleted: d.timestamp({ withTimezone: true }).nullable().default(null),
-}), (t) => [
-  index("event_id_idx").on(t.eventId),
-]);
+export const questions = createTable(
+  "question",
+  (d) => ({
+    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+    eventId: d
+      .uuid()
+      .notNull()
+      .references(() => events.id),
+    question: d.varchar({ length: 256 }).notNull(),
+    order: d.integer().notNull().default(0),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: d
+      .timestamp({ withTimezone: true })
+      .$onUpdate(sql`CURRENT_TIMESTAMP`),
+    updatedBy: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
+    deleted: d.timestamp({ withTimezone: true }).nullable().default(null),
+  }),
+  (t) => [index("event_id_idx").on(t.eventId)],
+);
 ```
 
 Now, create a queries file for the feature. This is where the database logic is
 implemented.
 
 `src/core/features/questions/queries.ts`
+
 ```ts
-import { eq, and, isNull } from "drizzle-orm";
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
-import { db, type SchemaConnection } from "~/adapters/db";
-import { questions } from "~/adapters/db/schema";
-import { injectable } from "tsyringe";
-import type { Question, CreateQuestion, UpdateQuestion } from "~/core/features/questions/types";
-import type { UndefinedToNullable } from "~/lib/types";
-import { NotFoundError } from "~/core/common/error";
+import { singleton } from "tsyringe";
+import { supabaseServiceClient } from "~/adapters/db/supabase-service-client";
+import type {
+  Question,
+  CreateQuestion,
+  UpdateQuestion,
+} from "~/core/features/questions/types";
 
-export const QuestionQueriesSymbol = Symbol("QuestionQueries");
-
-@injectable({ token: QuestionQueriesSymbol })
+@singleton()
 export class QuestionQueries {
-  private rowToQuestion(question: UndefinedToNullable<Question>): Question {
+  private rowToQuestion(row: Record<string, unknown>): Question {
     return {
-      ...question,
-      // Handle any nullable fields that should be undefined or otherwise
-      // mapped from the database.
+      id: row.id,
+      question: row.question,
+      order: row.order,
+      eventId: row.event_id,
+      createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+      updatedAt: row.updated_at ? new Date(row.updated_at) : undefined,
+      updatedBy: row.updated_by,
     };
   }
 
-  getQuestionsByEventId({
-    eventId,
-    connection = db,
-  }: {
-    eventId: string;
-    connection?: SchemaConnection;
-  }): TaskEither<Error, Question[]> {
-    return TE.tryCatch(
-      async () => {
-        const questions = await connection.query.questions.findMany({
-          where: and(eq(questions.eventId, eventId), isNull(questions.deleted)),
-          orderBy: (questions, { asc }) => [asc(questions.order)],
-        });
+  async getQuestionsByEventId(eventId: string): Promise<Question[]> {
+    const { data, error } = await supabaseServiceClient
+      .from("hx2_question")
+      .select("*")
+      .eq("event_id", eventId)
+      .is("deleted", null)
+      .order("order", { ascending: true });
 
-        return questions.map((question) => this.rowToQuestion(question));
-      },
-      (error) => error as Error,
-    );
+    if (error) throw error;
+    return (data ?? []).map((row) => this.rowToQuestion(row));
   }
 
-  getById({
-    id,
-    connection = db,
-  }: {
-    id: number;
-    connection?: SchemaConnection;
-  }): TaskEither<Error, Question> {
-    return TE.tryCatch(
-      async () => {
-        const question = (await connection.query.questions.findFirst({
-          where: and(eq(questions.id, id), isNull(questions.deleted)),
-        })) satisfies UndefinedToNullable<Question> | undefined;
+  async getById(id: number): Promise<Question | null> {
+    const { data, error } = await supabaseServiceClient
+      .from("hx2_question")
+      .select("*")
+      .eq("id", id)
+      .is("deleted", null)
+      .single();
 
-        if (!question) {
-          throw new NotFoundError("Question not found");
-        }
-        return this.rowToQuestion(question);
-      },
-      (error) => error as Error,
-    );
+    if (error?.code === "PGRST116") return null;
+    if (error) throw error;
+    if (!data) return null;
+    return this.rowToQuestion(data);
   }
 
-  create({
-    createQuestion,
-    userId,
-    connection = db,
-  }: {
-    createQuestion: CreateQuestion;
-    userId: string;
-    connection?: SchemaConnection;
-  }): TaskEither<Error, Question> {
-    return TE.tryCatch(
-      async () => {
-        const [question]: UndefinedToNullable<Question>[] = await connection
-          .insert(questions)
-          .values({ ...createQuestion, updatedBy: userId })
-          .returning()
-          .execute();
+  async create(
+    createQuestion: CreateQuestion,
+    userId: string,
+  ): Promise<Question> {
+    const { data, error } = await supabaseServiceClient
+      .from("hx2_question")
+      .insert({
+        question: createQuestion.question,
+        order: createQuestion.order,
+        event_id: createQuestion.eventId,
+        updated_by: userId,
+      })
+      .select()
+      .single();
 
-        if (!question) {
-          throw new NotFoundError("Question not created");
-        }
-        return this.rowToQuestion(question);
-      },
-      (error) => error as Error,
-    );
+    if (error) throw error;
+    return this.rowToQuestion(data);
   }
 
-  update({
-    questionId,
-    updateQuestion,
-    userId,
-    connection = db,
-  }: {
-    questionId: number;
-    updateQuestion: UpdateQuestion;
-    userId: string;
-    connection?: SchemaConnection;
-  }): TaskEither<Error, Question> {
-    return TE.tryCatch(
-      async () => {
-        const [question]: UndefinedToNullable<Question>[] = await connection
-          .update(questions)
-          .set({ ...updateQuestion, updatedBy: userId })
-          .where(and(eq(questions.id, questionId), isNull(questions.deleted)))
-          .returning()
-          .execute();
+  async update(
+    questionId: number,
+    updateQuestion: UpdateQuestion,
+    userId: string,
+  ): Promise<Question | null> {
+    const { data, error } = await supabaseServiceClient
+      .from("hx2_question")
+      .update({
+        ...(updateQuestion.question !== undefined && {
+          question: updateQuestion.question,
+        }),
+        ...(updateQuestion.order !== undefined && {
+          order: updateQuestion.order,
+        }),
+        updated_by: userId,
+      })
+      .eq("id", questionId)
+      .is("deleted", null)
+      .select()
+      .single();
 
-        if (!question) {
-          throw new NotFoundError("Question not updated");
-        }
-        return this.rowToQuestion(question);
-      },
-      (error) => error as Error,
-    );
+    if (error?.code === "PGRST116") return null;
+    if (error) throw error;
+    return this.rowToQuestion(data);
   }
 
-  delete({
-    id,
-    userId,
-    connection = db,
-  }: {
-    id: number;
-    userId: string;
-    connection?: SchemaConnection;
-  }): TaskEither<Error, void> {
-    return TE.tryCatch(
-      async () => {
-        await connection
-          .update(questions)
-          .set({ deleted: new Date(), updatedBy: userId })
-          .where(and(eq(questions.id, id), isNull(questions.deleted)))
-          .execute();
-      },
-      (error) => error as Error,
-    );
+  async delete(id: number, userId: string): Promise<void> {
+    const { error } = await supabaseServiceClient
+      .from("hx2_question")
+      .update({ deleted: new Date().toISOString(), updated_by: userId })
+      .eq("id", id)
+      .is("deleted", null);
+
+    if (error) throw error;
   }
 }
 ```
 
 Now, create a service file for the feature. This is where access control and
-business logic is implemented using functional programming patterns with `fp-ts`.
+business logic is implemented using async/await with thrown errors.
 
 `src/core/features/questions/service.ts`
+
 ```ts
-import { injectable, inject } from "tsyringe";
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
-import { type QuestionQueries, QuestionQueriesSymbol } from "~/core/features/questions/queries";
-import { type EventService, EventServiceSymbol } from "~/core/features/events/service";
-import { ForbiddenError } from "~/core/common/error";
-import type { Question, CreateQuestion, UpdateQuestion } from "~/core/features/questions/types";
-import { pipe } from "fp-ts/lib/function";
+import { singleton, inject } from "tsyringe";
+import { QuestionQueries } from "~/core/features/questions/queries";
+import { EventService } from "~/core/features/events/service";
+import { ForbiddenError, NotFoundError } from "~/core/common/error";
+import type {
+  Question,
+  CreateQuestion,
+  UpdateQuestion,
+} from "~/core/features/questions/types";
+import type { Event } from "~/core/features/events/types";
 
-export const QuestionServiceSymbol = Symbol("QuestionService");
-
-@injectable({ token: QuestionServiceSymbol })
+@singleton()
 export class QuestionService {
   constructor(
-    @inject(QuestionQueriesSymbol)
+    @inject(QuestionQueries)
     private readonly questionQueries: QuestionQueries,
-    @inject(EventServiceSymbol)
+    @inject(EventService)
     private readonly eventService: EventService,
   ) {}
 
-  getQuestionsByEventId(eventId: string): TaskEither<Error, Question[]> {
-    return this.questionQueries.getQuestionsByEventId({ eventId });
+  async getQuestionsByEventId(eventId: string): Promise<Question[]> {
+    return this.questionQueries.getQuestionsByEventId(eventId);
   }
 
-  getById(id: number): TaskEither<Error, Question> {
-    return this.questionQueries.getById({ id });
+  async getById(id: number): Promise<Question | null> {
+    return this.questionQueries.getById(id);
   }
 
-  create(createQuestion: CreateQuestion, userId: string): TaskEither<Error, Question> {
-    return pipe(
-      this.eventService.getById(createQuestion.eventId),
-      TE.flatMap((event) => this.checkEventAuthorization(event, userId)),
-      TE.flatMap(() => this.questionQueries.create({ createQuestion, userId })),
-    );
+  async create(
+    createQuestion: CreateQuestion,
+    userId: string,
+  ): Promise<Question> {
+    const event = await this.eventService.getById(createQuestion.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+    return this.questionQueries.create(createQuestion, userId);
   }
 
-  update(
+  async update(
     questionId: number,
     updateQuestion: UpdateQuestion,
     userId: string,
-  ): TaskEither<Error, Question> {
-    return pipe(
-      this.getById(questionId),
-      TE.flatMap((question) => this.checkEventAuthorization(question, userId)),
-      TE.flatMap(() =>
-        this.questionQueries.update({ questionId, updateQuestion, userId }),
-      ),
+  ): Promise<Question> {
+    const question = await this.getById(questionId);
+    if (!question) {
+      throw new NotFoundError("Question not found");
+    }
+
+    const event = await this.eventService.getById(question.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+
+    const updated = await this.questionQueries.update(
+      questionId,
+      updateQuestion,
+      userId,
     );
+    if (!updated) {
+      throw new NotFoundError("Question not found after update");
+    }
+    return updated;
   }
 
-  delete(questionId: number, userId: string): TaskEither<Error, void> {
-    return pipe(
-      this.getById(questionId),
-      TE.flatMap((question) => this.checkEventAuthorization(question, userId)),
-      TE.flatMap(() => this.questionQueries.delete({ id: questionId, userId })),
-    );
+  async delete(questionId: number, userId: string): Promise<void> {
+    const question = await this.getById(questionId);
+    if (!question) {
+      throw new NotFoundError("Question not found");
+    }
+
+    const event = await this.eventService.getById(question.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+
+    await this.questionQueries.delete(questionId, userId);
   }
 
-  private checkEventAuthorization(event: any, userId: string) {
-    return TE.fromPredicate(
-      (event: any) => event.creatorId === userId,
-      (event: any) =>
-        new ForbiddenError(
-          `User ${userId} is not authorized to access event ${event.id}`,
-        ),
-    );
+  private checkEventAuthorization(event: Event, userId: string): void {
+    if (event.creatorId !== userId) {
+      throw new ForbiddenError(
+        `User ${userId} is not authorized to access event ${event.id}`,
+      );
+    }
   }
 }
 ```
 
 `src/adapters/trpc/routes/questions.ts`
+
 ```ts
 import { z } from "zod";
-import * as E from "fp-ts/lib/Either";
 import { createTRPCRouter, publicProcedure } from "~/adapters/trpc/trpc";
 import { container } from "tsyringe";
-import { QuestionServiceSymbol } from "~/core/features/questions/service";
-import type { QuestionService } from "~/core/features/questions/service";
+import { QuestionService } from "~/core/features/questions/service";
+import { toTrpcError } from "~/adapters/trpc/error";
 
-const serviceCall = async <T>(fn: (service: QuestionService) => TaskEither<Error, T>) => {
-  const service = container.resolve<QuestionService>(QuestionServiceSymbol);
-  const result = await fn(service)();
-
-  return E.match(
-    (error: Error) => {
-      throw toTrpcError(error);
-    },
-    (data: T) => data,
-  )(result);
-}
+const serviceCall = async <T>(
+  fn: (service: QuestionService) => Promise<T>,
+): Promise<T> => {
+  const service = container.resolve<QuestionService>(QuestionService);
+  try {
+    return await fn(service);
+  } catch (error) {
+    throw toTrpcError(
+      error instanceof Error ? error : new Error(String(error)),
+    );
+  }
+};
 
 export const questionsRouter = createTRPCRouter({
   getQuestionsByEventId: publicProcedure
-    .input(z.object({ eventId: z.uuid() }))
+    .input(z.object({ eventId: z.string().uuid() }))
     .query(({ input }) => {
-      return serviceCall((service) => service.getQuestionsByEventId(input.eventId));
+      return serviceCall((service) =>
+        service.getQuestionsByEventId(input.eventId),
+      );
     }),
 
   getById: publicProcedure
@@ -371,29 +359,42 @@ export const questionsRouter = createTRPCRouter({
     }),
 
   create: publicProcedure
-    .input(z.object({
-      question: z.string().min(1),
-      eventId: z.uuid(),
-    }))
+    .input(
+      z.object({
+        question: z.string().min(1),
+        eventId: z.string().uuid(),
+      }),
+    )
     .mutation(({ input, ctx }) => {
-      return serviceCall((service) => service.create(input, ctx.user.id));
+      return serviceCall((service) =>
+        service.create(input, ctx.session.user.id),
+      );
     }),
 
   update: publicProcedure
-    .input(z.object({
-      id: z.number(),
-      question: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        id: z.number(),
+        question: z.string().min(1),
+      }),
+    )
     .mutation(({ input, ctx }) => {
-      return serviceCall((service) => service.update(input, ctx.user.id));
+      return serviceCall((service) =>
+        service.update(
+          input.id,
+          { question: input.question },
+          ctx.session.user.id,
+        ),
+      );
     }),
 });
 ```
 
 ## Guidelines
-* Never use `any` in the codebase. It is explicitly forbidden to use `any`.
-* Never use the not-null assertion (`value!`). It is explicitly forbidden to use `!`.
-* Never import `React`. Instead, import the utilities from `react` directly.
-* Casting `as ___` is also forbidden. Use a validator, or type things properly.
-* Run `bun run check` to catch errors after making changes. Preexisting issues
+
+- Never use `any` in the codebase. It is explicitly forbidden to use `any`.
+- Never use the not-null assertion (`value!`). It is explicitly forbidden to use `!`.
+- Never import `React`. Instead, import the utilities from `react` directly.
+- Casting `as ___` is also forbidden. Use a validator, or type things properly.
+- Run `bun run check` to catch errors after making changes. Preexisting issues
   should be fixed.

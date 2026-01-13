@@ -1,6 +1,4 @@
 import { inject, singleton } from "tsyringe";
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { ActivityQueries } from "./adapters/queries";
 import { EventService } from "~/core/features/events/service";
 import {
@@ -10,7 +8,7 @@ import {
 import { PresenterQueries } from "../presenter/adapters/queries";
 import { ActivityResponseQueries } from "../responses/adapters/queries";
 import { ActivityResultsService } from "~/core/features/activities/results-service";
-import { ForbiddenError } from "~/core/common/error";
+import { ForbiddenError, NotFoundError } from "~/core/common/error";
 import type {
   Activity,
   CreateActivity,
@@ -19,7 +17,6 @@ import type {
 import type { Event } from "~/core/features/events/types";
 import type { ActivityData } from "~/core/features/presenter/types";
 import type { ActivityResult } from "~/core/features/activities/results";
-import { pipe } from "fp-ts/lib/function";
 
 @singleton()
 export class ActivityService {
@@ -38,134 +35,128 @@ export class ActivityService {
     private readonly resultsService: ActivityResultsService,
   ) {}
 
-  getByEventId(eventId: string): TaskEither<Error, Activity[]> {
+  async getByEventId(eventId: string): Promise<Activity[]> {
     return this.activityQueries.getByEventId({ eventId });
   }
 
-  getById(id: number): TaskEither<Error, Activity> {
+  async getById(id: number): Promise<Activity | null> {
     return this.activityQueries.getById({ id });
   }
 
-  create(
+  async create(
     createActivity: CreateActivity,
     userId: string,
-  ): TaskEither<Error, Activity> {
-    return pipe(
-      this.eventService.getById(createActivity.eventId),
-      TE.flatMap(this.checkEventAuthorization(userId)),
-      TE.flatMap(() => this.activityQueries.create({ createActivity, userId })),
-    );
+  ): Promise<Activity> {
+    const event = await this.eventService.getById(createActivity.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+    return this.activityQueries.create({ createActivity, userId });
   }
 
-  update(
+  async update(
     activityId: number,
     updateActivity: UpdateActivity,
     userId: string,
-  ): TaskEither<Error, Activity> {
-    return pipe(
-      this.getById(activityId),
-      TE.flatMap((originalActivity) =>
-        pipe(
-          this.eventService.getById(originalActivity.eventId),
-          TE.flatMap(this.checkEventAuthorization(userId)),
-          TE.flatMap(() =>
-            this.activityQueries.update({ activityId, updateActivity, userId }),
-          ),
-          TE.flatMap((updatedActivity) =>
-            pipe(
-              this.handleLiveActivityUpdate(originalActivity, updatedActivity),
-              TE.map(() => updatedActivity),
-            ),
-          ),
-        ),
-      ),
-    );
+  ): Promise<Activity> {
+    const originalActivity = await this.getById(activityId);
+    if (!originalActivity) {
+      throw new NotFoundError("Activity not found");
+    }
+    const event = await this.eventService.getById(originalActivity.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+    const updatedActivity = await this.activityQueries.update({
+      activityId,
+      updateActivity,
+      userId,
+    });
+    if (!updatedActivity) {
+      throw new NotFoundError("Activity not updated");
+    }
+    await this.handleLiveActivityUpdate(originalActivity, updatedActivity);
+    return updatedActivity;
   }
 
-  delete(activityId: number, userId: string): TaskEither<Error, void> {
-    return pipe(
-      this.getById(activityId),
-      TE.flatMap((activity) =>
-        pipe(
-          this.eventService.getById(activity.eventId),
-          TE.flatMap(this.checkEventAuthorization(userId)),
-        ),
-      ),
-      TE.flatMap(() => this.activityQueries.delete({ id: activityId, userId })),
-    );
+  async delete(activityId: number, userId: string): Promise<void> {
+    const activity = await this.getById(activityId);
+    if (!activity) {
+      throw new NotFoundError("Activity not found");
+    }
+    const event = await this.eventService.getById(activity.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+    await this.activityQueries.delete({ id: activityId, userId });
   }
 
-  reorder(activityIds: number[], userId: string): TaskEither<Error, void> {
-    return pipe(
-      // Verify user has access to the first activity to check event ownership
-      activityIds.length > 0 && activityIds[0] !== undefined
-        ? this.getById(activityIds[0])
-        : TE.left(new Error("No activities to reorder")),
-      TE.flatMap((activity) =>
-        pipe(
-          this.eventService.getById(activity.eventId),
-          TE.flatMap(this.checkEventAuthorization(userId)),
-        ),
-      ),
-      TE.flatMap(() => this.activityQueries.reorder({ activityIds, userId })),
-    );
+  async reorder(activityIds: number[], userId: string): Promise<void> {
+    if (activityIds.length === 0 || activityIds[0] === undefined) {
+      throw new Error("No activities to reorder");
+    }
+    const activity = await this.getById(activityIds[0]);
+    if (!activity) {
+      throw new NotFoundError("Activity not found");
+    }
+    const event = await this.eventService.getById(activity.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+    await this.activityQueries.reorder({ activityIds, userId });
   }
 
-  private handleLiveActivityUpdate(
+  private async handleLiveActivityUpdate(
     originalActivity: Activity,
     updatedActivity: Activity,
-  ): TaskEither<Error, void> {
-    return pipe(
-      this.presenterService.getByEventId(updatedActivity.eventId),
-      TE.flatMap((presenterState) => {
-        // Check if this activity is currently being presented
-        const isCurrentlyLive =
-          presenterState.data &&
-          "activityId" in presenterState.data &&
-          presenterState.data.activityId === updatedActivity.id;
+  ): Promise<void> {
+    const presenterState = await this.presenterService.getByEventId(
+      updatedActivity.eventId,
+    );
+    if (!presenterState) {
+      return;
+    }
 
-        // For non-response activities, also check if the type matches and there's no activityId
-        // This handles activities that were started before we added proper activityId tracking
-        const isLegacyLiveActivity =
-          !isCurrentlyLive &&
-          presenterState.data?.type === updatedActivity.type &&
-          !(
-            presenterState.data &&
-            "activityId" in presenterState.data &&
-            presenterState.data.activityId
-          ) &&
-          ["markdown", "iframe", "welcome", "break", "thank-you"].includes(
-            updatedActivity.type,
-          );
+    const isCurrentlyLive =
+      presenterState.data &&
+      "activityId" in presenterState.data &&
+      presenterState.data.activityId === updatedActivity.id;
 
-        if (!isCurrentlyLive || isLegacyLiveActivity) {
-          return TE.right(void 0);
-        }
+    const isLegacyLiveActivity =
+      !isCurrentlyLive &&
+      presenterState.data?.type === updatedActivity.type &&
+      !(
+        presenterState.data &&
+        "activityId" in presenterState.data &&
+        presenterState.data.activityId
+      ) &&
+      ["markdown", "iframe", "welcome", "break", "thank-you"].includes(
+        updatedActivity.type,
+      );
 
-        // Check if the activity structure changed significantly
-        const shouldCleanupResponses = this.hasStructuralChanges(
-          originalActivity,
-          updatedActivity,
-        );
+    if (!isCurrentlyLive || isLegacyLiveActivity) {
+      return;
+    }
 
-        return pipe(
-          // Clean up responses if needed
-          shouldCleanupResponses
-            ? this.cleanupInvalidResponses(updatedActivity.id, presenterState)
-            : TE.right(void 0),
-          TE.flatMap(() => {
-            // Update the presenter state with new activity data
-            const updatedActivityData =
-              this.convertActivityToActivityData(updatedActivity);
-            return this.updatePresenterStateDirectly(
-              updatedActivity.eventId,
-              updatedActivity.type,
-              updatedActivityData,
-            );
-          }),
-          TE.map(() => void 0),
-        );
-      }),
+    const shouldCleanupResponses = this.hasStructuralChanges(
+      originalActivity,
+      updatedActivity,
+    );
+
+    if (shouldCleanupResponses) {
+      await this.cleanupInvalidResponses(updatedActivity.id);
+    }
+
+    const updatedActivityData =
+      this.convertActivityToActivityData(updatedActivity);
+    await this.updatePresenterStateDirectly(
+      updatedActivity.eventId,
+      updatedActivity.type,
+      updatedActivityData,
     );
   }
 
@@ -173,7 +164,6 @@ export class ActivityService {
     originalActivity: Activity,
     updatedActivity: Activity,
   ): boolean {
-    // For multiple choice questions, check if options changed
     if (
       originalActivity.type === "multiple-choice" &&
       updatedActivity.type === "multiple-choice"
@@ -186,7 +176,6 @@ export class ActivityService {
       );
     }
 
-    // For ranking questions, check if items changed
     if (
       originalActivity.type === "ranking" &&
       updatedActivity.type === "ranking"
@@ -198,14 +187,12 @@ export class ActivityService {
       );
     }
 
-    // For free response, check if max length constraints changed significantly
     if (
       originalActivity.type === "free-response" &&
       updatedActivity.type === "free-response"
     ) {
       const originalData = originalActivity.data as { maxLength?: number };
       const updatedData = updatedActivity.data as { maxLength?: number };
-      // Only cleanup if max length was reduced significantly
       if (originalData.maxLength && updatedData.maxLength) {
         return updatedData.maxLength < originalData.maxLength;
       }
@@ -214,61 +201,21 @@ export class ActivityService {
     return false;
   }
 
-  private cleanupInvalidResponses(
-    activityId: number,
-    presenterState: { eventId: string },
-  ): TaskEither<Error, void> {
-    return pipe(
-      // Delete all responses for this activity when structure changes significantly
-      this.responseQueries.deleteByActivityId({ activityId }),
-      TE.flatMap(() => {
-        // Broadcast activity responses update to notify presenter views
-        return pipe(
-          this.eventService.getById(presenterState.eventId),
-          TE.flatMap((event) => {
-            const shortId = event.shortId;
-            if (shortId) {
-              return TE.right(void 0); // Broadcasting replaced with Supabase Realtime
-            }
-            return TE.right(void 0);
-          }),
-        );
-      }),
-    );
+  private async cleanupInvalidResponses(activityId: number): Promise<void> {
+    await this.responseQueries.deleteByActivityId({ activityId });
   }
 
-  private updatePresenterStateDirectly(
+  private async updatePresenterStateDirectly(
     eventId: string,
     currentPage: string,
     data: ActivityData,
-  ): TaskEither<Error, void> {
-    return pipe(
-      this.eventService.getById(eventId),
-      TE.flatMap((event) => {
-        // Directly use the presenter queries to bypass authorization
-        // since we've already authorized the user in the main update method
-        return pipe(
-          this.presenterQueries.upsert({
-            updateState: { eventId, currentPage, data },
-          }),
-          TE.flatMap(() => {
-            // Broadcast the state change
-            const shortId = event.shortId;
-            if (shortId) {
-              return TE.right(void 0); // Broadcasting replaced with Supabase Realtime
-            }
-            return TE.right(void 0);
-          }),
-          TE.map(() => void 0),
-        );
-      }),
-    );
+  ): Promise<void> {
+    await this.presenterQueries.upsert({
+      updateState: { eventId, currentPage, data },
+    });
   }
 
   private convertActivityToActivityData(activity: Activity): ActivityData {
-    // Convert stored activity data to presenter activity data format
-    const baseData = { ...activity.data, activityId: activity.id };
-
     switch (activity.type) {
       case "multiple-choice": {
         const data = activity.data as {
@@ -364,36 +311,34 @@ export class ActivityService {
           message: data.message,
         };
       }
-      default:
+      default: {
+        const baseData = { ...activity.data, activityId: activity.id };
         return baseData as ActivityData;
+      }
     }
   }
 
-  getResults(
+  async getResults(
     activityId: number,
     userId: string,
-  ): TaskEither<Error, ActivityResult> {
-    return pipe(
-      this.getById(activityId),
-      TE.flatMap((activity) =>
-        pipe(
-          this.eventService.getById(activity.eventId),
-          TE.flatMap(this.checkEventAuthorization(userId)),
-          TE.flatMap(() =>
-            this.resultsService.getResultsForActivity(activityId),
-          ),
-        ),
-      ),
-    );
+  ): Promise<ActivityResult> {
+    const activity = await this.getById(activityId);
+    if (!activity) {
+      throw new NotFoundError("Activity not found");
+    }
+    const event = await this.eventService.getById(activity.eventId);
+    if (!event) {
+      throw new NotFoundError("Event not found");
+    }
+    this.checkEventAuthorization(event, userId);
+    return this.resultsService.getResultsForActivity(activityId);
   }
 
-  private checkEventAuthorization(userId: string) {
-    return TE.fromPredicate(
-      (event: Event) => event.creatorId === userId,
-      (event: Event) =>
-        new ForbiddenError(
-          `User ${userId} is not authorized to manage activities for event ${event.id}`,
-        ),
-    );
+  private checkEventAuthorization(event: Event, userId: string): void {
+    if (event.creatorId !== userId) {
+      throw new ForbiddenError(
+        `User ${userId} is not authorized to manage activities for event ${event.id}`,
+      );
+    }
   }
 }

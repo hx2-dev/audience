@@ -1,5 +1,3 @@
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { singleton } from "tsyringe";
 import { supabaseServiceClient } from "~/core/adapters/db/supabase";
 import type {
@@ -12,7 +10,6 @@ import type {
   UpdatePresenterState,
 } from "~/core/features/presenter/types";
 import { activityDataValidator } from "~/core/features/presenter/types";
-import { NotFoundError } from "~/core/common/error";
 
 type PresenterStateRow = Tables<"hx2-audience_presenter_state">;
 type PresenterStateInsert = TablesInsert<"hx2-audience_presenter_state">;
@@ -62,79 +59,67 @@ export class PresenterQueries {
     };
   }
 
-  getByEventId({
+  async getByEventId({
     eventId,
   }: {
     eventId: string;
-  }): TaskEither<Error, PresenterState> {
-    return TE.tryCatch(
-      async () => {
-        const { data: states, error } = await supabaseServiceClient
-          .from("hx2-audience_presenter_state")
-          .select("*")
-          .eq("eventId", eventId);
+  }): Promise<PresenterState | null> {
+    const { data: states, error } = await supabaseServiceClient
+      .from("hx2-audience_presenter_state")
+      .select("*")
+      .eq("eventId", eventId);
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        if (!states || states.length === 0) {
-          throw new NotFoundError("Presenter state not found");
-        }
+    if (!states || states.length === 0) {
+      return null;
+    }
 
-        if (states.length > 1) {
-          throw new Error(
-            `Multiple presenter states found for event ${eventId}`,
-          );
-        }
+    if (states.length > 1) {
+      throw new Error(`Multiple presenter states found for event ${eventId}`);
+    }
 
-        const state = states[0];
-        if (!state) {
-          throw new NotFoundError("Presenter state not found");
-        }
+    const state = states[0];
+    if (!state) {
+      return null;
+    }
 
-        return this.rowToPresenterState(state);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToPresenterState(state);
   }
 
-  upsert({
+  async upsert({
     updateState,
   }: {
     updateState: UpdatePresenterState;
-  }): TaskEither<Error, PresenterState> {
-    return TE.tryCatch(
-      async () => {
-        const stateData: PresenterStateInsert = {
-          eventId: updateState.eventId,
-          currentPage: updateState.currentPage ?? "",
-          data: (updateState.data as unknown as Json) ?? null,
-        };
+  }): Promise<PresenterState> {
+    const stateData: PresenterStateInsert = {
+      eventId: updateState.eventId,
+      currentPage: updateState.currentPage ?? "",
+      data: (updateState.data as unknown as Json) ?? null,
+    };
 
-        const { data: states, error } = await supabaseServiceClient
-          .from("hx2-audience_presenter_state")
-          .upsert(stateData, {
-            onConflict: "eventId",
-          })
-          .select();
+    const { data: states, error } = await supabaseServiceClient
+      .from("hx2-audience_presenter_state")
+      .upsert(stateData, {
+        onConflict: "eventId",
+      })
+      .select();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        if (!states || states.length === 0) {
-          throw new NotFoundError("Presenter state not updated");
-        }
+    if (!states || states.length === 0) {
+      throw new Error("Presenter state not updated");
+    }
 
-        const state = states[0];
-        if (!state) {
-          throw new NotFoundError("Presenter state not updated");
-        }
+    const state = states[0];
+    if (!state) {
+      throw new Error("Presenter state not updated");
+    }
 
-        return this.rowToPresenterState(state);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToPresenterState(state);
   }
 }

@@ -1,6 +1,4 @@
 import { inject, singleton } from "tsyringe";
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { ActivityQueries } from "./adapters/queries";
 import { ActivityResponseQueries } from "../responses/adapters/queries";
 import type { Activity } from "~/core/features/activities/types";
@@ -16,7 +14,7 @@ import type {
   RankingResult,
   FreeResponseResult,
 } from "~/core/features/activities/results";
-import { pipe } from "fp-ts/lib/function";
+import { NotFoundError } from "~/core/common/error";
 
 @singleton()
 export class ActivityResultsService {
@@ -27,16 +25,15 @@ export class ActivityResultsService {
     private readonly responseQueries: ActivityResponseQueries,
   ) {}
 
-  getResultsForActivity(activityId: number): TaskEither<Error, ActivityResult> {
-    return pipe(
-      this.activityQueries.getById({ id: activityId }),
-      TE.flatMap((activity) =>
-        pipe(
-          this.responseQueries.getByActivityId({ activityId }),
-          TE.map((responses) => this.processResults(activity, responses)),
-        ),
-      ),
-    );
+  async getResultsForActivity(activityId: number): Promise<ActivityResult> {
+    const activity = await this.activityQueries.getById({ id: activityId });
+    if (!activity) {
+      throw new NotFoundError("Activity not found");
+    }
+    const responses = await this.responseQueries.getByActivityId({
+      activityId,
+    });
+    return this.processResults(activity, responses);
   }
 
   private processResults(
@@ -77,14 +74,12 @@ export class ActivityResultsService {
     };
     const optionCounts: Record<string, number> = {};
 
-    // Initialize all options with 0 count
     (data.options ?? []).forEach((option: string) => {
       optionCounts[option] = 0;
     });
 
     console.log("responses", responses);
 
-    // Count responses using Zod validation
     responses.forEach((response) => {
       const options = extractMultipleChoiceResponse(response.response);
       options.forEach((option) => {
@@ -94,7 +89,6 @@ export class ActivityResultsService {
       });
     });
 
-    // Create results with percentages
     const options = Object.entries(optionCounts).map(([value, count]) => ({
       value,
       label: value,
@@ -120,24 +114,21 @@ export class ActivityResultsService {
     const data = activity.data as { question?: string; items?: string[] };
     const itemScores = new Map<string, { sum: number; count: number }>();
 
-    // Initialize all items
     (data.items ?? []).forEach((item: string) => {
       itemScores.set(item, { sum: 0, count: 0 });
     });
 
-    // Process responses using Zod validation
     responses.forEach((response) => {
       const ranking = extractRankingResponse(response.response);
       ranking.forEach((item, index) => {
         const scores = itemScores.get(item);
         if (scores) {
-          scores.sum += index + 1; // Position starts at 1
+          scores.sum += index + 1;
           scores.count += 1;
         }
       });
     });
 
-    // Calculate results
     const items = Array.from(itemScores.entries()).map(([item, scores]) => {
       const averagePosition = scores.count > 0 ? scores.sum / scores.count : 0;
       const score =
@@ -151,7 +142,6 @@ export class ActivityResultsService {
       };
     });
 
-    // Sort by score (higher is better)
     items.sort((a, b) => b.score - a.score);
 
     return {
@@ -171,7 +161,6 @@ export class ActivityResultsService {
     const data = activity.data as { question?: string };
     const responseMap = new Map<string, number>();
 
-    // Aggregate responses using Zod validation
     responses.forEach((response) => {
       const responseText = extractFreeResponse(response.response);
       if (responseText) {
@@ -185,14 +174,13 @@ export class ActivityResultsService {
       }
     });
 
-    // Create results with percentages
     const responseItems = Array.from(responseMap.entries())
       .map(([text, count]) => ({
         text,
         count,
         percentage: totalResponses > 0 ? (count / totalResponses) * 100 : 0,
       }))
-      .sort((a, b) => b.count - a.count); // Sort by count descending
+      .sort((a, b) => b.count - a.count);
 
     return {
       activityId: activity.id,

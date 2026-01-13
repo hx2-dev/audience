@@ -1,5 +1,3 @@
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { singleton } from "tsyringe";
 import { supabaseServiceClient } from "~/core/adapters/db/supabase";
 import type {
@@ -12,7 +10,6 @@ import type {
   Event,
   UpdateEvent,
 } from "~/core/features/events/types";
-import { NotFoundError } from "~/core/common/error";
 
 type EventRow = Tables<"hx2-audience_event">;
 type EventInsert = TablesInsert<"hx2-audience_event">;
@@ -36,117 +33,93 @@ export class EventQueries {
     };
   }
 
-  getById({ id }: { id: string }): TaskEither<Error, Event> {
-    return TE.tryCatch(
-      async () => {
-        const { data: event, error } = await supabaseServiceClient
-          .from("hx2-audience_event")
-          .select("*")
-          .eq("id", id)
-          .is("deleted", null)
-          .maybeSingle();
+  async getById({ id }: { id: string }): Promise<Event | null> {
+    const { data: event, error } = await supabaseServiceClient
+      .from("hx2-audience_event")
+      .select("*")
+      .eq("id", id)
+      .is("deleted", null)
+      .maybeSingle();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        if (!event) {
-          throw new NotFoundError("Event not found");
-        }
+    if (!event) {
+      return null;
+    }
 
-        return this.rowToEvent(event);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToEvent(event);
   }
 
-  getByCreatorId({
-    creatorId,
-  }: {
-    creatorId: string;
-  }): TaskEither<Error, Event[]> {
-    return TE.tryCatch(
-      async () => {
-        const { data: events, error } = await supabaseServiceClient
-          .from("hx2-audience_event")
-          .select("*")
-          .eq("creatorId", creatorId)
-          .is("deleted", null);
+  async getByCreatorId({ creatorId }: { creatorId: string }): Promise<Event[]> {
+    const { data: events, error } = await supabaseServiceClient
+      .from("hx2-audience_event")
+      .select("*")
+      .eq("creatorId", creatorId)
+      .is("deleted", null);
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        return events.map((event) => this.rowToEvent(event));
-      },
-      (error) => error as Error,
-    );
+    return events.map((event) => this.rowToEvent(event));
   }
 
-  getByShortId({ shortId }: { shortId: string }): TaskEither<Error, Event> {
-    return TE.tryCatch(
-      async () => {
-        const { data: event, error } = await supabaseServiceClient
-          .from("hx2-audience_event")
-          .select("*")
-          .eq("shortId", shortId.toUpperCase())
-          .is("deleted", null)
-          .maybeSingle();
+  async getByShortId({ shortId }: { shortId: string }): Promise<Event | null> {
+    const { data: event, error } = await supabaseServiceClient
+      .from("hx2-audience_event")
+      .select("*")
+      .eq("shortId", shortId.toUpperCase())
+      .is("deleted", null)
+      .maybeSingle();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        if (!event) {
-          throw new NotFoundError("Event not found");
-        }
+    if (!event) {
+      return null;
+    }
 
-        return this.rowToEvent(event);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToEvent(event);
   }
 
-  create({
+  async create({
     createEvent,
     userId,
   }: {
     createEvent: CreateEvent;
     userId: string;
-  }): TaskEither<Error, Event> {
-    return TE.tryCatch(
-      async () => {
-        const eventData: EventInsert = {
-          id: crypto.randomUUID(),
-          title: createEvent.title,
-          description: createEvent.description ?? null,
-          start: createEvent.start.toISOString(),
-          end: createEvent.end.toISOString(),
-          creatorId: userId,
-          updatedBy: userId,
-        };
+  }): Promise<Event> {
+    const eventData: EventInsert = {
+      id: crypto.randomUUID(),
+      title: createEvent.title,
+      description: createEvent.description ?? null,
+      start: createEvent.start.toISOString(),
+      end: createEvent.end.toISOString(),
+      creatorId: userId,
+      updatedBy: userId,
+    };
 
-        const { data: event, error } = await supabaseServiceClient
-          .from("hx2-audience_event")
-          .insert(eventData)
-          .select()
-          .single();
+    const { data: event, error } = await supabaseServiceClient
+      .from("hx2-audience_event")
+      .insert(eventData)
+      .select()
+      .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        if (!event) {
-          throw new NotFoundError("Event not created");
-        }
+    if (!event) {
+      throw new Error("Event not created");
+    }
 
-        return this.rowToEvent(event);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToEvent(event);
   }
 
-  updateShortId({
+  async updateShortId({
     eventId,
     shortId,
     userId,
@@ -154,35 +127,30 @@ export class EventQueries {
     eventId: string;
     shortId: string;
     userId: string;
-  }): TaskEither<Error, Event> {
-    return TE.tryCatch(
-      async () => {
-        const { data: event, error } = await supabaseServiceClient
-          .from("hx2-audience_event")
-          .update({
-            shortId: shortId.toUpperCase(),
-            updatedBy: userId,
-            updatedAt: new Date().toISOString(),
-          })
-          .eq("id", eventId)
-          .select()
-          .single();
+  }): Promise<Event | null> {
+    const { data: event, error } = await supabaseServiceClient
+      .from("hx2-audience_event")
+      .update({
+        shortId: shortId.toUpperCase(),
+        updatedBy: userId,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq("id", eventId)
+      .select()
+      .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        if (!event) {
-          throw new NotFoundError("Event not updated");
-        }
+    if (!event) {
+      return null;
+    }
 
-        return this.rowToEvent(event);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToEvent(event);
   }
 
-  update({
+  async update({
     eventId,
     updateEvent,
     userId,
@@ -190,60 +158,44 @@ export class EventQueries {
     eventId: string;
     updateEvent: UpdateEvent;
     userId: string;
-  }): TaskEither<Error, Event> {
-    return TE.tryCatch(
-      async () => {
-        const updateData: EventUpdate = {
-          ...updateEvent,
-          start: updateEvent.start?.toISOString(),
-          end: updateEvent.end?.toISOString(),
-          description: updateEvent.description ?? null,
-          updatedBy: userId,
-        };
+  }): Promise<Event | null> {
+    const updateData: EventUpdate = {
+      ...updateEvent,
+      start: updateEvent.start?.toISOString(),
+      end: updateEvent.end?.toISOString(),
+      description: updateEvent.description ?? null,
+      updatedBy: userId,
+    };
 
-        const { data: event, error } = await supabaseServiceClient
-          .from("hx2-audience_event")
-          .update(updateData)
-          .eq("id", eventId)
-          .select()
-          .single();
+    const { data: event, error } = await supabaseServiceClient
+      .from("hx2-audience_event")
+      .update(updateData)
+      .eq("id", eventId)
+      .select()
+      .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        if (!event) {
-          throw new NotFoundError("Event not updated");
-        }
+    if (!event) {
+      return null;
+    }
 
-        return this.rowToEvent(event);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToEvent(event);
   }
 
-  delete({
-    id,
-    userId,
-  }: {
-    id: string;
-    userId: string;
-  }): TaskEither<Error, void> {
-    return TE.tryCatch(
-      async () => {
-        const { error } = await supabaseServiceClient
-          .from("hx2-audience_event")
-          .update({
-            deleted: new Date().toISOString(),
-            updatedBy: userId,
-          })
-          .eq("id", id);
+  async delete({ id, userId }: { id: string; userId: string }): Promise<void> {
+    const { error } = await supabaseServiceClient
+      .from("hx2-audience_event")
+      .update({
+        deleted: new Date().toISOString(),
+        updatedBy: userId,
+      })
+      .eq("id", id);
 
-        if (error) {
-          throw new Error(error.message);
-        }
-      },
-      (error) => error as Error,
-    );
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 }

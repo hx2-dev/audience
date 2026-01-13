@@ -1,5 +1,3 @@
-import * as TE from "fp-ts/lib/TaskEither";
-import type { TaskEither } from "fp-ts/lib/TaskEither";
 import { singleton } from "tsyringe";
 import { supabaseServiceClient } from "~/core/adapters/db/supabase";
 import type {
@@ -17,7 +15,6 @@ import {
   type ActivityData,
   activityDataValidator,
 } from "~/core/features/presenter/types";
-import { NotFoundError } from "~/core/common/error";
 
 type ActivityRow = Tables<"hx2-audience_activity">;
 type ActivityInsert = TablesInsert<"hx2-audience_activity">;
@@ -83,94 +80,78 @@ export class ActivityQueries {
     };
   }
 
-  getByEventId({
-    eventId,
-  }: {
-    eventId: string;
-  }): TaskEither<Error, Activity[]> {
-    return TE.tryCatch(
-      async () => {
-        const { data: activities, error } = await supabaseServiceClient
-          .from("hx2-audience_activity")
-          .select("*")
-          .eq("eventId", eventId)
-          .is("deleted", null)
-          .order("order", { ascending: true })
-          .order("createdAt", { ascending: true });
+  async getByEventId({ eventId }: { eventId: string }): Promise<Activity[]> {
+    const { data: activities, error } = await supabaseServiceClient
+      .from("hx2-audience_activity")
+      .select("*")
+      .eq("eventId", eventId)
+      .is("deleted", null)
+      .order("order", { ascending: true })
+      .order("createdAt", { ascending: true });
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        return activities.map((activity) => this.rowToActivity(activity));
-      },
-      (error) => error as Error,
-    );
+    return activities.map((activity) => this.rowToActivity(activity));
   }
 
-  getById({ id }: { id: number }): TaskEither<Error, Activity> {
-    return TE.tryCatch(
-      async () => {
-        const { data: activity, error } = await supabaseServiceClient
-          .from("hx2-audience_activity")
-          .select("*")
-          .eq("id", id)
-          .is("deleted", null)
-          .single();
+  async getById({ id }: { id: number }): Promise<Activity | null> {
+    const { data: activity, error } = await supabaseServiceClient
+      .from("hx2-audience_activity")
+      .select("*")
+      .eq("id", id)
+      .is("deleted", null)
+      .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null;
+      }
+      throw new Error(error.message);
+    }
 
-        if (!activity) {
-          throw new NotFoundError("Activity not found");
-        }
+    if (!activity) {
+      return null;
+    }
 
-        return this.rowToActivity(activity);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToActivity(activity);
   }
 
-  create({
+  async create({
     createActivity,
     userId,
   }: {
     createActivity: CreateActivity;
     userId: string;
-  }): TaskEither<Error, Activity> {
-    return TE.tryCatch(
-      async () => {
-        const activityData: ActivityInsert = {
-          eventId: createActivity.eventId,
-          name: createActivity.name,
-          type: createActivity.type,
-          data: createActivity.data as unknown as Json,
-          order: createActivity.order ?? 0,
-          updatedBy: userId,
-        };
+  }): Promise<Activity> {
+    const activityData: ActivityInsert = {
+      eventId: createActivity.eventId,
+      name: createActivity.name,
+      type: createActivity.type,
+      data: createActivity.data as unknown as Json,
+      order: createActivity.order ?? 0,
+      updatedBy: userId,
+    };
 
-        const { data: activity, error } = await supabaseServiceClient
-          .from("hx2-audience_activity")
-          .insert(activityData)
-          .select()
-          .single();
+    const { data: activity, error } = await supabaseServiceClient
+      .from("hx2-audience_activity")
+      .insert(activityData)
+      .select()
+      .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      throw new Error(error.message);
+    }
 
-        if (!activity) {
-          throw new NotFoundError("Activity not created");
-        }
+    if (!activity) {
+      throw new Error("Activity not created");
+    }
 
-        return this.rowToActivity(activity);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToActivity(activity);
   }
 
-  update({
+  async update({
     activityId,
     updateActivity,
     userId,
@@ -178,109 +159,90 @@ export class ActivityQueries {
     activityId: number;
     updateActivity: UpdateActivity;
     userId: string;
-  }): TaskEither<Error, Activity> {
-    return TE.tryCatch(
-      async () => {
-        const serializedData = updateActivity.data
-          ? (() => {
-              const data = updateActivity.data;
-              if (
-                data &&
-                typeof data === "object" &&
-                "type" in data &&
-                data.type === "timer" &&
-                "startedAt" in data &&
-                data.startedAt instanceof Date
-              ) {
-                return { ...data, startedAt: data.startedAt.toISOString() };
-              }
-              return data;
-            })()
-          : undefined;
+  }): Promise<Activity | null> {
+    const serializedData = updateActivity.data
+      ? (() => {
+          const data = updateActivity.data;
+          if (
+            data &&
+            typeof data === "object" &&
+            "type" in data &&
+            data.type === "timer" &&
+            "startedAt" in data &&
+            data.startedAt instanceof Date
+          ) {
+            return { ...data, startedAt: data.startedAt.toISOString() };
+          }
+          return data;
+        })()
+      : undefined;
 
-        const updateData: ActivityUpdate = {
-          ...updateActivity,
-          data: serializedData as Json,
-          updatedBy: userId,
-        };
+    const updateData: ActivityUpdate = {
+      ...updateActivity,
+      data: serializedData as Json,
+      updatedBy: userId,
+    };
 
-        const { data: activity, error } = await supabaseServiceClient
-          .from("hx2-audience_activity")
-          .update(updateData)
-          .eq("id", activityId)
-          .is("deleted", null)
-          .select()
-          .single();
+    const { data: activity, error } = await supabaseServiceClient
+      .from("hx2-audience_activity")
+      .update(updateData)
+      .eq("id", activityId)
+      .is("deleted", null)
+      .select()
+      .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null;
+      }
+      throw new Error(error.message);
+    }
 
-        if (!activity) {
-          throw new NotFoundError("Activity not updated");
-        }
+    if (!activity) {
+      return null;
+    }
 
-        return this.rowToActivity(activity);
-      },
-      (error) => error as Error,
-    );
+    return this.rowToActivity(activity);
   }
 
-  delete({
-    id,
-    userId,
-  }: {
-    id: number;
-    userId: string;
-  }): TaskEither<Error, void> {
-    return TE.tryCatch(
-      async () => {
-        const { error } = await supabaseServiceClient
-          .from("hx2-audience_activity")
-          .update({
-            deleted: new Date().toISOString(),
-            updatedBy: userId,
-          })
-          .eq("id", id)
-          .is("deleted", null);
+  async delete({ id, userId }: { id: number; userId: string }): Promise<void> {
+    const { error } = await supabaseServiceClient
+      .from("hx2-audience_activity")
+      .update({
+        deleted: new Date().toISOString(),
+        updatedBy: userId,
+      })
+      .eq("id", id)
+      .is("deleted", null);
 
-        if (error) {
-          throw new Error(error.message);
-        }
-      },
-      (error) => error as Error,
-    );
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 
-  reorder({
+  async reorder({
     activityIds,
     userId,
   }: {
     activityIds: number[];
     userId: string;
-  }): TaskEither<Error, void> {
-    return TE.tryCatch(
-      async () => {
-        // Update the order of activities based on their position in the array
-        for (let i = 0; i < activityIds.length; i++) {
-          const activityId = activityIds[i];
-          if (activityId !== undefined) {
-            const { error } = await supabaseServiceClient
-              .from("hx2-audience_activity")
-              .update({
-                order: i,
-                updatedBy: userId,
-              })
-              .eq("id", activityId)
-              .is("deleted", null);
+  }): Promise<void> {
+    for (let i = 0; i < activityIds.length; i++) {
+      const activityId = activityIds[i];
+      if (activityId !== undefined) {
+        const { error } = await supabaseServiceClient
+          .from("hx2-audience_activity")
+          .update({
+            order: i,
+            updatedBy: userId,
+          })
+          .eq("id", activityId)
+          .is("deleted", null);
 
-            if (error) {
-              throw error;
-            }
-          }
+        if (error) {
+          throw error;
         }
-      },
-      (error) => error as Error,
-    );
+      }
+    }
   }
 }
