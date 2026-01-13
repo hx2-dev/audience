@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "debug": "NODE_OPTIONS='--inspect' next dev --turbo",
     "build": "next build",
     "check": "eslint . && tsc --noEmit",
     "db:generate": "drizzle-kit generate",
