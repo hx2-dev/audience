@@ -2,7 +2,6 @@ import { waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { EventJoinForm } from "./event-join";
 import { renderWithProviders } from "~/lib/testing";
-import { mockRouter } from "~/../jest.setup";
 
 describe("EventJoinForm", () => {
   beforeEach(() => {
@@ -10,25 +9,27 @@ describe("EventJoinForm", () => {
   });
 
   it("should render without exploding", () => {
-    renderWithProviders(<EventJoinForm />);
+    renderWithProviders(<EventJoinForm onJoin={jest.fn()} />);
   });
 
   it("should submit when the 6th digit is entered manually", async () => {
     const user = userEvent.setup();
-    const screen = renderWithProviders(<EventJoinForm />);
+    const onJoin = jest.fn();
+    const screen = renderWithProviders(<EventJoinForm onJoin={onJoin} />);
 
     const input = screen.getByRole("textbox");
 
     await user.type(input, "123456");
 
     await waitFor(() => {
-      expect(mockRouter.push).toHaveBeenCalledWith("/audience/123456/activity");
+      expect(onJoin).toHaveBeenCalledWith("123456");
     });
   });
 
   it("should submit when a 6-digit event ID is pasted into the input", async () => {
     const user = userEvent.setup();
-    const screen = renderWithProviders(<EventJoinForm />);
+    const onJoin = jest.fn();
+    const screen = renderWithProviders(<EventJoinForm onJoin={onJoin} />);
 
     const input = screen.getByRole("textbox");
 
@@ -36,7 +37,7 @@ describe("EventJoinForm", () => {
     await user.paste("123456");
 
     await waitFor(() => {
-      expect(mockRouter.push).toHaveBeenCalledWith("/audience/123456/activity");
+      expect(onJoin).toHaveBeenCalledWith("123456");
     });
   });
 });

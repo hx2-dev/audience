@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   InputOTP,
   InputOTPGroup,
@@ -16,11 +15,14 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
-export function EventJoinForm() {
+export function EventJoinForm({
+  onJoin,
+}: {
+  onJoin: (eventId: string) => Promise<void>;
+}) {
   const [eventId, setEventId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
 
   const handleSubmit = async (completedValue?: string) => {
     const id = completedValue ?? eventId;
@@ -34,7 +36,7 @@ export function EventJoinForm() {
     setError("");
 
     try {
-      router.push(`/audience/${id}/activity`);
+      await onJoin(id);
     } catch {
       setError("Unable to connect. Please check your internet connection.");
     } finally {
