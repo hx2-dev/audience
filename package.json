@@ -23,9 +23,10 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:storybook": "vitest --project=storybook",
+    "test:storybook": "vitest --project=storybook --run",
+    "test:storybook:watch": "vitest --project=storybook",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook:build": "storybook build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
