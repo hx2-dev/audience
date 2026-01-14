@@ -25,6 +25,9 @@
     "test:watch": "jest --watch",
     "test:storybook": "vitest --project=storybook --run",
     "test:storybook:watch": "vitest --project=storybook",
+    "test:e2e": "playwright test",
+    "test:e2e:watch": "playwright test --watch",
+    "test:e2e:ui": "playwright test --ui",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build"
   },
@@ -54,7 +57,7 @@
     "@storybook/addon-themes": "^10.1.11",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.2",
-    "@t3-oss/env-nextjs": "^0.12.0",
+    "@t3-oss/env-nextjs": "^0.13.10",
     "@tanstack/react-query": "^5.69.0",
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
@@ -90,12 +93,13 @@
     "tailwind-merge": "^3.3.1",
     "tsyringe": "^4.10.0",
     "wrangler": "^4.33.1",
-    "zod": "^4.1.5"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.0.0",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.57.0",
     "@storybook/addon-a11y": "^10.1.11",
     "@storybook/addon-docs": "^10.1.11",
     "@storybook/addon-vitest": "^10.1.11",

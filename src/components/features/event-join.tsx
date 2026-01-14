@@ -79,6 +79,7 @@ export function EventJoinForm({
           )}
 
           <Button
+            data-testid="join-event-button"
             onClick={() => handleSubmit()}
             disabled={eventId.length !== 6 || isLoading}
             className="min-h-[44px] w-full text-base sm:text-lg"
