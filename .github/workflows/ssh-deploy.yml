@@ -1,0 +1,164 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.vars.outputs.short_sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set variables
+        id: vars
+        run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Fetch environment from server
+        env:
+          HOST: ${{ secrets.EC2_TAILSCALE_IP }}
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          # Copy env vars from server
+          scp -i ~/.ssh/deploy_key deploy@$HOST:/var/www/app/shared/.env .env.local || {
+            echo "No .env found on server, continuing without env vars"
+          }
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run linter
+        run: bun run lint
+
+      - name: Build application
+        run: bun run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NEXT_PUBLIC_COMMIT_SHA: ${{ github.sha }}
+          NEXT_PUBLIC_COMMIT_SHORT: ${{ steps.vars.outputs.short_sha }}
+
+      - name: Package standalone output
+        run: |
+          cd .next/standalone
+          [ -d ../../public ] && cp -r ../../public ./public
+          [ -d ../static ] && mkdir -p .next && cp -r ../static ./.next/static
+          echo "${{ github.sha }}" > VERSION
+          tar -czf ../../release.tar.gz .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.vars.outputs.short_sha }}
+          path: release.tar.gz
+          retention-days: 30
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-${{ needs.build.outputs.short_sha }}
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Deploy to server
+        env:
+          HOST: ${{ secrets.EC2_TAILSCALE_IP }}
+          SHORT_SHA: ${{ needs.build.outputs.short_sha }}
+          FULL_SHA: ${{ github.sha }}
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          # Copy artifact to server
+          scp -i ~/.ssh/deploy_key release.tar.gz deploy@$HOST:/tmp/
+
+          # Deploy on server
+          ssh -i ~/.ssh/deploy_key deploy@$HOST << DEPLOY_SCRIPT
+            set -e
+            
+            APP_DIR="/var/www/app"
+            
+            echo "Deploying ${SHORT_SHA}..."
+            
+            rm -rf \${APP_DIR}/current-new
+            mkdir -p \${APP_DIR}/current-new
+            tar -xzf /tmp/release.tar.gz -C \${APP_DIR}/current-new
+            rm /tmp/release.tar.gz
+            
+            ln -sf \${APP_DIR}/shared/.env \${APP_DIR}/current-new/.env.local
+            
+            rm -rf \${APP_DIR}/current-old
+            mv \${APP_DIR}/current \${APP_DIR}/current-old 2>/dev/null || true
+            mv \${APP_DIR}/current-new \${APP_DIR}/current
+            
+            echo "Reloading application..."
+            cd \${APP_DIR}/current
+            
+            export NVM_DIR="\$HOME/.nvm"
+            [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
+            
+            if pm2 describe app > /dev/null 2>&1; then
+              HOSTNAME=0.0.0.0 pm2 reload app --update-env
+            else
+              HOSTNAME=0.0.0.0 pm2 start server.js --name app --wait-ready --listen-timeout 30000
+            fi
+            
+            echo "Health check..."
+            sleep 3
+            for i in {1..10}; do
+              if curl -sf http://hx2-deploy:3000/api/health | grep -q "healthy"; then
+                echo "Deployed ${SHORT_SHA}"
+                pm2 save
+                rm -rf \${APP_DIR}/current-old
+                exit 0
+              fi
+              echo "Attempt \$i/10..."
+              sleep 2
+            done
+            
+            echo "Health check failed, restoring previous..."
+            rm -rf \${APP_DIR}/current
+            mv \${APP_DIR}/current-old \${APP_DIR}/current
+            pm2 reload app
+            exit 1
+          DEPLOY_SCRIPT
+
+      - name: Deployment failed
+        if: failure()
+        run: echo "::error::Deployment failed! Check the logs above."

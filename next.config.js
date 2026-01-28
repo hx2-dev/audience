@@ -8,6 +8,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import("next").NextConfig} */
 const config = {
+  output: "standalone",
   pageExtensions: ["ts", "tsx", "md", "mdx"],
   eslint: {
     ignoreDuringBuilds: process.env.CI === "true",
@@ -28,7 +29,7 @@ export default withSentryConfig(withMDX(config), {
 
   org: "hunter-henrichsen",
   project: "hx2-audience",
-
+  
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 

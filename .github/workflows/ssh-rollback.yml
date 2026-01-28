@@ -1,0 +1,153 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit SHA to rollback to (7+ chars, or leave empty for previous deploy)"
+        required: false
+        type: string
+
+jobs:
+  find-artifact:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.find.outputs.short_sha }}
+      artifact_id: ${{ steps.find.outputs.artifact_id }}
+
+    steps:
+      - name: Find rollback target
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_COMMIT: ${{ inputs.commit }}
+        run: |
+          if [ -n "$INPUT_COMMIT" ]; then
+            # User specified a commit - find matching artifact
+            # Support both short (7 char) and full SHA
+            SHORT_SHA="${INPUT_COMMIT:0:7}"
+            echo "Looking for artifact for commit ${SHORT_SHA}..."
+            
+            ARTIFACT=$(gh api "/repos/${{ github.repository }}/actions/artifacts?per_page=100" \
+              --jq ".artifacts[] | select(.name | startswith(\"release-${SHORT_SHA}\"))")
+            
+            if [ -z "$ARTIFACT" ]; then
+              echo "No artifact found for commit ${SHORT_SHA}"
+              echo ""
+              echo "Available artifacts:"
+              gh api "/repos/${{ github.repository }}/actions/artifacts?per_page=15" \
+                --jq '.artifacts[] | select(.name | startswith("release-")) | "  \(.name) - expires \(.expires_at | split("T")[0])"'
+              exit 1
+            fi
+            
+            ARTIFACT_ID=$(echo "$ARTIFACT" | jq -r '.id')
+            ARTIFACT_NAME=$(echo "$ARTIFACT" | jq -r '.name')
+            SHORT_SHA="${ARTIFACT_NAME#release-}"
+            
+            echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "artifact_id=${ARTIFACT_ID}" >> $GITHUB_OUTPUT
+            
+          else
+            # Find the previous successful deploy (not the current one)
+            echo "Finding previous deployment..."
+            
+            # Get the commit SHA from the most recent successful deploy, then find the one before it
+            CURRENT_SHA=$(gh api "/repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?status=success&per_page=1" \
+              --jq '.workflow_runs[0].head_sha' | cut -c1-7)
+            
+            echo "Current deployment: ${CURRENT_SHA}"
+            
+            # Find an artifact that's NOT the current one
+            ARTIFACT=$(gh api "/repos/${{ github.repository }}/actions/artifacts?per_page=20" \
+              --jq "[.artifacts[] | select(.name | startswith(\"release-\")) | select(.name != \"release-${CURRENT_SHA}\")] | .[0]")
+            
+            if [ -z "$ARTIFACT" ] || [ "$ARTIFACT" = "null" ]; then
+              echo "No previous deployment found"
+              exit 1
+            fi
+            
+            ARTIFACT_ID=$(echo "$ARTIFACT" | jq -r '.id')
+            ARTIFACT_NAME=$(echo "$ARTIFACT" | jq -r '.name')
+            SHORT_SHA="${ARTIFACT_NAME#release-}"
+            
+            echo "Previous deployment: ${SHORT_SHA}"
+            
+            echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "artifact_id=${ARTIFACT_ID}" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Will rollback to ${SHORT_SHA}"
+
+  rollback:
+    needs: find-artifact
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Download artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Downloading release-${{ needs.find-artifact.outputs.short_sha }}..."
+          gh api "/repos/${{ github.repository }}/actions/artifacts/${{ needs.find-artifact.outputs.artifact_id }}/zip" > artifact.zip
+          unzip artifact.zip
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Deploy rollback
+        env:
+          HOST: ${{ secrets.EC2_TAILSCALE_IP }}
+          SHORT_SHA: ${{ needs.find-artifact.outputs.short_sha }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          scp -i ~/.ssh/deploy_key release.tar.gz deploy@$HOST:/tmp/
+
+          ssh -i ~/.ssh/deploy_key deploy@$HOST << ROLLBACK_SCRIPT
+            set -e
+            
+            APP_DIR="/var/www/app"
+            
+            echo "Rolling back to ${SHORT_SHA}..."
+            
+            rm -rf \${APP_DIR}/current-new
+            mkdir -p \${APP_DIR}/current-new
+            tar -xzf /tmp/release.tar.gz -C \${APP_DIR}/current-new
+            rm /tmp/release.tar.gz
+            
+            ln -sf \${APP_DIR}/shared/.env \${APP_DIR}/current-new/.env.local
+            
+            rm -rf \${APP_DIR}/current-old
+            mv \${APP_DIR}/current \${APP_DIR}/current-old 2>/dev/null || true
+            mv \${APP_DIR}/current-new \${APP_DIR}/current
+            
+            export NVM_DIR="\$HOME/.nvm"
+            [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
+            
+            pm2 reload app --update-env
+            
+            sleep 3
+            for i in {1..10}; do
+              if curl -sf http://localhost:3000/api/health | grep -q "healthy"; then
+                echo "Rolled back to ${SHORT_SHA}"
+                pm2 save
+                rm -rf \${APP_DIR}/current-old
+                exit 0
+              fi
+              sleep 2
+            done
+            
+            echo "Rollback failed, restoring..."
+            rm -rf \${APP_DIR}/current
+            mv \${APP_DIR}/current-old \${APP_DIR}/current
+            pm2 reload app
+            exit 1
+          ROLLBACK_SCRIPT
