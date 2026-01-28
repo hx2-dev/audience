@@ -63,7 +63,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
-      <body className="bg-red-500">
+      <body className="bg-slate-50 dark:bg-slate-900">
         <SupabaseAuthProvider>
           <TRPCReactProvider>
             <ThemeProvider
